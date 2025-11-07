@@ -1,47 +1,42 @@
 /*
- * read() syscall interceptor
+ * close() syscall interceptor
  */
-
-#ifndef __INTERCEPT_READ_
-#define __INTERCEPT_READ_
 
 /* Thread-local reentry guard */
-static __thread int in_read_intercept = 0;
+static __thread int in_close_intercept = 0;
 
 /*
- * Intercepted read() function
+ * Intercepted close() function
  */
-ssize_t read(int fd, void *buf, size_t count) {
+int close(int fd) {
     /* Check reentry guard - if already inside or RPC in progress, use direct syscall */
-    if (in_read_intercept || is_rpc_in_progress()) {
-        return syscall(SYS_read, fd, buf, count);
+    if (in_close_intercept || is_rpc_in_progress()) {
+        return syscall(SYS_close, fd);
     }
 
     /* Set guard */
-    in_read_intercept = 1;
+    in_close_intercept = 1;
 
     /* Debug message using raw syscall */
     char debug_msg[256];
     int msg_len = snprintf(debug_msg, sizeof(debug_msg),
-                          "[Client] Intercepted read(%d, %p, %zu)\n",
-                          fd, buf, count);
+                          "[Client] Intercepted close(%d)\n", fd);
     syscall(SYS_write, STDERR_FILENO, debug_msg, msg_len);
 
     /* Get RPC client */
     CLIENT *client = get_rpc_client();
-    ssize_t result = -1;
+    int result = -1;
 
     if (client != NULL) {
         /* Prepare RPC request */
-        read_request req;
+        close_request req;
         req.fd = fd;
-        req.count = count;
 
         /* Disable interception during RPC call */
         rpc_in_progress = 1;
 
         /* Call RPC service */
-        read_response *res = syscall_read_1(&req, client);
+        close_response *res = syscall_close_1(&req, client);
 
         /* Re-enable interception */
         rpc_in_progress = 0;
@@ -51,22 +46,13 @@ ssize_t read(int fd, void *buf, size_t count) {
             result = res->result;
             errno = res->err;
 
-            /* Copy data from response to user buffer */
-            if (result > 0 && res->data.data_len > 0) {
-                size_t bytes_to_copy = res->data.data_len;
-                if (bytes_to_copy > count) {
-                    bytes_to_copy = count;
-                }
-                memcpy(buf, res->data.data_val, bytes_to_copy);
-            }
-
             msg_len = snprintf(debug_msg, sizeof(debug_msg),
-                              "[Client] read() RPC result: %zd bytes, errno=%d\n",
+                              "[Client] close() RPC result: %d, errno=%d\n",
                               result, errno);
             syscall(SYS_write, STDERR_FILENO, debug_msg, msg_len);
         } else {
             /* RPC call failed */
-            clnt_perror(client, "[Client] read() RPC failed");
+            clnt_perror(client, "[Client] close() RPC failed");
             errno = EIO;
             result = -1;
         }
@@ -74,13 +60,11 @@ ssize_t read(int fd, void *buf, size_t count) {
         /* No RPC connection - fall back to direct syscall */
         const char *fallback_msg = "[Client] No RPC connection, using direct syscall\n";
         syscall(SYS_write, STDERR_FILENO, fallback_msg, strlen(fallback_msg));
-        result = syscall(SYS_read, fd, buf, count);
+        result = syscall(SYS_close, fd);
     }
 
     /* Clear guard */
-    in_read_intercept = 0;
+    in_close_intercept = 0;
 
     return result;
 }
-
-#endif

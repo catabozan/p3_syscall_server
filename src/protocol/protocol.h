@@ -72,6 +72,22 @@ struct write_response {
 };
 typedef struct write_response write_response;
 
+struct stat_request {
+	char *path;
+};
+typedef struct stat_request stat_request;
+
+struct stat_response {
+	int result;
+	int err;
+	u_int mode;
+	u_int size;
+	u_int atime;
+	u_int mtime;
+	u_int ctime;
+};
+typedef struct stat_response stat_response;
+
 #define SYSCALL_PROG 0x20000001
 #define SYSCALL_VERS 1
 
@@ -88,6 +104,9 @@ extern  read_response * syscall_read_1_svc(read_request *, struct svc_req *);
 #define SYSCALL_WRITE 4
 extern  write_response * syscall_write_1(write_request *, CLIENT *);
 extern  write_response * syscall_write_1_svc(write_request *, struct svc_req *);
+#define SYSCALL_STAT 5
+extern  stat_response * syscall_stat_1(stat_request *, CLIENT *);
+extern  stat_response * syscall_stat_1_svc(stat_request *, struct svc_req *);
 extern int syscall_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
@@ -103,6 +122,9 @@ extern  read_response * syscall_read_1_svc();
 #define SYSCALL_WRITE 4
 extern  write_response * syscall_write_1();
 extern  write_response * syscall_write_1_svc();
+#define SYSCALL_STAT 5
+extern  stat_response * syscall_stat_1();
+extern  stat_response * syscall_stat_1_svc();
 extern int syscall_prog_1_freeresult ();
 #endif /* K&R C */
 
@@ -117,6 +139,8 @@ extern  bool_t xdr_read_request (XDR *, read_request*);
 extern  bool_t xdr_read_response (XDR *, read_response*);
 extern  bool_t xdr_write_request (XDR *, write_request*);
 extern  bool_t xdr_write_response (XDR *, write_response*);
+extern  bool_t xdr_stat_request (XDR *, stat_request*);
+extern  bool_t xdr_stat_response (XDR *, stat_response*);
 
 #else /* K&R C */
 extern bool_t xdr_open_request ();
@@ -127,6 +151,8 @@ extern bool_t xdr_read_request ();
 extern bool_t xdr_read_response ();
 extern bool_t xdr_write_request ();
 extern bool_t xdr_write_response ();
+extern bool_t xdr_stat_request ();
+extern bool_t xdr_stat_response ();
 
 #endif /* K&R C */
 

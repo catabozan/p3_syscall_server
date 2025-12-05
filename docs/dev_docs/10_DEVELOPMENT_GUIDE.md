@@ -451,6 +451,16 @@ nm -D ./build/intercept.so | grep open
 
 ## Adding New Syscalls
 
+**For a detailed, comprehensive tutorial with complete examples, see [11_ADDING_NEW_SYSCALLS_TUTORIAL.md](./11_ADDING_NEW_SYSCALLS_TUTORIAL.md).**
+
+The tutorial includes:
+- Complete stat() implementation walkthrough
+- Detailed explanation of each component
+- Troubleshooting common issues
+- Best practices and patterns
+
+Below is a quick reference for experienced developers:
+
 ### Step-by-Step Guide: Adding lseek()
 
 #### 1. Update Protocol Definition

@@ -73,21 +73,29 @@ This documentation is organized to progressively introduce you to the system, st
     - Adding new syscalls
     - Debugging tips
 
+11. **[11_ADDING_NEW_SYSCALLS_TUTORIAL.md](./11_ADDING_NEW_SYSCALLS_TUTORIAL.md)** - Detailed tutorial!
+    - Step-by-step guide for new syscalls
+    - Complete stat() implementation example
+    - Protocol definition
+    - Server and client implementation
+    - Testing and troubleshooting
+
 ## Quick Navigation
 
 ### By Topic
 
 - **New to RPC?** → Start with [03_ONC_RPC_PRIMER.md](./03_ONC_RPC_PRIMER.md)
 - **Want to understand the flow?** → See [08_REQUEST_FLOW.md](./08_REQUEST_FLOW.md)
+- **Need to add a syscall?** → Follow [11_ADDING_NEW_SYSCALLS_TUTORIAL.md](./11_ADDING_NEW_SYSCALLS_TUTORIAL.md)
 - **Need to add functionality?** → Check [10_DEVELOPMENT_GUIDE.md](./10_DEVELOPMENT_GUIDE.md)
 - **Debugging issues?** → See troubleshooting in [10_DEVELOPMENT_GUIDE.md](./10_DEVELOPMENT_GUIDE.md)
 
 ### By Role
 
 - **Product Manager** → Read 01, 02
-- **New Developer** → Read 01, 02, 03, 04, 06, 08
+- **New Developer** → Read 01, 02, 03, 04, 06, 08, 11
 - **Maintainer** → Read all documents
-- **Contributor** → Read 03, 04, 06, 08, 09, 10
+- **Contributor** → Read 03, 04, 06, 08, 09, 10, 11
 
 ## Prerequisites
 

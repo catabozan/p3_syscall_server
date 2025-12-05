@@ -68,3 +68,18 @@ syscall_write_1(write_request *argp, CLIENT *clnt)
 	}
 	return (&clnt_res);
 }
+
+stat_response *
+syscall_stat_1(stat_request *argp, CLIENT *clnt)
+{
+	static stat_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_STAT,
+		(xdrproc_t) xdr_stat_request, (caddr_t) argp,
+		(xdrproc_t) xdr_stat_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}

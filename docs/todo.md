@@ -1,6 +1,11 @@
+## task 4
+- [ ] check syscalls for sqlite
+- [ ] chunk buffers in protocol calls when client asks for buff bigger than protocol limit
+
 ## fixes AI code
 - [ ] rpc_client.c@88 - svcaddr.len = svcaddr.maxlen = sizeof(server_addr);
 - [ ] rpc_server.c@remove_fd_mapping() - check for closed FDs and reuse instead of increasing index
+- [ ] look up what are variadic arguments like va_list, va_start, va_arg, va_end
 
 ## task 1
 

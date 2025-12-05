@@ -65,6 +65,21 @@ struct write_response {
     int err;     /* errno value */
 };
 
+struct stat_request {
+    string path<MAX_PATH_LEN> /* File path */;
+};
+
+struct stat_response {
+    int result;
+    int err;
+
+    unsigned int mode;       /* File type and permissions */
+    unsigned int size;       /* File size in bytes */
+    unsigned int atime;      /* Last access time */
+    unsigned int mtime;      /* Last modification time */
+    unsigned int ctime;      /* Last status change time */
+};
+
 /*
  * RPC Program Definition
  */
@@ -74,5 +89,6 @@ program SYSCALL_PROG {
         close_response SYSCALL_CLOSE(close_request) = 2;
         read_response SYSCALL_READ(read_request) = 3;
         write_response SYSCALL_WRITE(write_request) = 4;
+        stat_response SYSCALL_STAT(stat_request) = 5;
     } = 1;  /* Version 1 */
 } = 0x20000001;  /* Program number */

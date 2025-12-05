@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <rpc/rpc.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -218,6 +219,48 @@ syscall_write_1_svc(write_request *req, struct svc_req *rqstp) {
 
         fprintf(stderr, "[Server] WRITE result: %zd bytes, errno=%d\n",
                 bytes_written, res.err);
+    }
+
+    return &res;
+}
+
+/*
+ * SYSCALL_STAT implementation
+ */
+stat_response *
+syscall_stat_1_svc(stat_request *req, struct svc_req *rqstp) {
+    static stat_response res;
+    struct stat statbuf;
+
+    fprintf(stderr, "[Server] STAT: path=%s\n", req->path);
+
+    /* Execute the actual stat syscall */
+    int stat_result = stat(req->path, &statbuf);
+    int saved_errno = errno;
+
+    if (stat_result == 0) {
+        /* Success: populate response with stat data */
+        res.result = 0;
+        res.err = 0;
+        res.mode = statbuf.st_mode;
+        res.size = statbuf.st_size;
+        res.atime = statbuf.st_atime;
+        res.mtime = statbuf.st_mtime;
+        res.ctime = statbuf.st_ctime;
+
+        fprintf(stderr, "[Server] STAT result: mode=%o, size=%u, errno=%d\n",
+                res.mode, res.size, res.err);
+    } else {
+        /* Failure */
+        res.result = -1;
+        res.err = saved_errno;
+        res.mode = 0;
+        res.size = 0;
+        res.atime = 0;
+        res.mtime = 0;
+        res.ctime = 0;
+
+        fprintf(stderr, "[Server] STAT failed: errno=%d\n", res.err);
     }
 
     return &res;

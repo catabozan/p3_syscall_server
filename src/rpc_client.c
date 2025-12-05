@@ -131,3 +131,4 @@ static void cleanup_rpc_client(void) {
 #include "intercept/intercept_close.h"
 #include "intercept/intercept_read.h"
 #include "intercept/intercept_write.h"
+#include "intercept/intercept_stat.h"

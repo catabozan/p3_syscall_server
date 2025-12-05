@@ -1,7 +1,7 @@
 /*
  * Comprehensive Test Program for Syscall Interception
  *
- * Tests open(), write(), close(), read() syscalls through RPC interception
+ * Tests open(), write(), close(), read(), stat() syscalls through RPC interception
  */
 
 #include <stdio.h>
@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <errno.h>
 
 #define TEST_FILE "/tmp/p3_tb_test.txt"
@@ -103,6 +104,52 @@ int main() {
         goto cleanup;
     }
     printf("SUCCESS: File closed\n\n");
+
+    /* Test 8: stat() on existing file */
+    printf("[Test 8] Getting file statistics: %s\n", TEST_FILE);
+    struct stat statbuf;
+    if (stat(TEST_FILE, &statbuf) < 0) {
+        fprintf(stderr, "ERROR: Failed to stat file: %s\n", strerror(errno));
+        test_passed = 0;
+        goto cleanup;
+    }
+    printf("SUCCESS: stat() returned:\n");
+    printf("  File mode: %o\n", statbuf.st_mode);
+    printf("  File size: %ld bytes\n", (long)statbuf.st_size);
+    printf("  Last access time: %ld\n", (long)statbuf.st_atime);
+    printf("  Last modification time: %ld\n", (long)statbuf.st_mtime);
+    printf("  Last status change time: %ld\n\n", (long)statbuf.st_ctime);
+
+    /* Test 9: Verify stat results */
+    printf("[Test 9] Verifying stat results...\n");
+    if ((size_t)statbuf.st_size != data_len) {
+        fprintf(stderr, "ERROR: File size mismatch! Expected %zu, got %ld\n",
+                data_len, (long)statbuf.st_size);
+        test_passed = 0;
+        goto cleanup;
+    }
+    if (!S_ISREG(statbuf.st_mode)) {
+        fprintf(stderr, "ERROR: File is not a regular file!\n");
+        test_passed = 0;
+        goto cleanup;
+    }
+    printf("SUCCESS: File size and type verified\n\n");
+
+    /* Test 10: stat() on non-existent file */
+    printf("[Test 10] Testing stat() on non-existent file...\n");
+    const char *nonexistent_file = "/tmp/p3_tb_nonexistent_file_xyz123.txt";
+    if (stat(nonexistent_file, &statbuf) == 0) {
+        fprintf(stderr, "ERROR: stat() succeeded on non-existent file!\n");
+        test_passed = 0;
+        goto cleanup;
+    }
+    if (errno != ENOENT) {
+        fprintf(stderr, "ERROR: Wrong errno for non-existent file: expected ENOENT (%d), got %d\n",
+                ENOENT, errno);
+        test_passed = 0;
+        goto cleanup;
+    }
+    printf("SUCCESS: stat() correctly failed with ENOENT\n\n");
 
 cleanup:
     /* Print final result */

@@ -24,6 +24,7 @@ syscall_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		close_request syscall_close_1_arg;
 		read_request syscall_read_1_arg;
 		write_request syscall_write_1_arg;
+		stat_request syscall_stat_1_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -56,6 +57,12 @@ syscall_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		_xdr_argument = (xdrproc_t) xdr_write_request;
 		_xdr_result = (xdrproc_t) xdr_write_response;
 		local = (char *(*)(char *, struct svc_req *)) syscall_write_1_svc;
+		break;
+
+	case SYSCALL_STAT:
+		_xdr_argument = (xdrproc_t) xdr_stat_request;
+		_xdr_result = (xdrproc_t) xdr_stat_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_stat_1_svc;
 		break;
 
 	default:

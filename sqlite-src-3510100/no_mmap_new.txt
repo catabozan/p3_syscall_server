@@ -1,0 +1,231 @@
+execve("./sqlite3", ["./sqlite3", "testdb.db"], 0x7fff1c5da208 /* 72 vars */) = 0
+brk(NULL)                               = 0x36241000
+brk(0x36241d40)                         = 0x36241d40
+arch_prctl(ARCH_SET_FS, 0x362413c0)     = 0
+set_tid_address(0x36241690)             = 119468
+set_robust_list(0x362416a0, 24)         = 0
+rseq(0x36241320, 0x20, 0, 0x53053053)   = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+readlinkat(AT_FDCWD, "/proc/self/exe", "/home/catab/Downloads/sqlite-src"..., 4096) = 48
+getrandom("\x11\xbe\x3a\xa6\xac\xd1\x29\x9c", 8, GRND_NONBLOCK) = 8
+brk(NULL)                               = 0x36241d40
+brk(0x36262d40)                         = 0x36262d40
+brk(0x36263000)                         = 0x36263000
+mprotect(0x654000, 36864, PROT_READ)    = 0
+ioctl(0, TCGETS, {c_iflag=BRKINT|ICRNL|IXON|IXANY|IMAXBEL|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD|HUPCL, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(1, TCGETS, {c_iflag=BRKINT|ICRNL|IXON|IXANY|IMAXBEL|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD|HUPCL, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+rt_sigaction(SIGINT, {sa_handler=0x414450, sa_mask=[INT], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x524c50}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+access("testdb.db", F_OK)               = -1 ENOENT (No such file or directory)
+getuid()                                = 1000
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(3)                                = 0
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=580, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/nsswitch.conf", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=580, ...}) = 0
+read(3, "# /etc/nsswitch.conf\n#\n# Example"..., 4096) = 580
+read(3, "", 4096)                       = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=580, ...}) = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/etc/passwd", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=2544, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:0:root:/root:/usr/bin/z"..., 4096) = 2544
+close(3)                                = 0
+access("/home/catab/.config/sqlite3/sqliterc", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/home/catab/.sqliterc", O_RDONLY) = -1 ENOENT (No such file or directory)
+fstat(1, {st_mode=S_IFCHR|0600, st_rdev=makedev(0x88, 0x1), ...}) = 0
+write(1, "SQLite version 3.51.1 2025-11-28"..., 42) = 42
+write(1, "Enter \".help\" for usage hints.\n", 31) = 31
+access("/home/catab/.local/state/sqlite_history", F_OK) = -1 ENOENT (No such file or directory)
+write(1, "sqlite> ", 8)                 = 8
+fstat(0, {st_mode=S_IFCHR|0600, st_rdev=makedev(0x88, 0x1), ...}) = 0
+read(0, "CREATE TABLE users (id INTEGER P"..., 1024) = 503
+access("testdb.db", F_OK)               = -1 ENOENT (No such file or directory)
+getcwd("/home/catab/Downloads/sqlite-src-3510100", 4096) = 41
+newfstatat(AT_FDCWD, "/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab", {st_mode=S_IFDIR|0700, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads", {st_mode=S_IFDIR|0755, st_size=20480, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", 0x7ffe6cba5c80, AT_SYMLINK_NOFOLLOW) = -1 ENOENT (No such file or directory)
+getpid()                                = 119468
+getpid()                                = 119468
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0644) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=0, ...}, 0) = 0
+pread64(3, "", 100, 0)                  = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", 0x7ffe6cba6e90, 0) = -1 ENOENT (No such file or directory)
+fstat(3, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+brk(0x3628c000)                         = 0x3628c000
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=0, l_len=0}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", 0x7ffe6cba7a30, 0) = -1 ENOENT (No such file or directory)
+pread64(3, "", 16, 24)                  = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741825, l_len=1}) = 0
+getpid()                                = 119468
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=0, ...}, 0) = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0644) = 4
+fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+geteuid()                               = 1000
+getpid()                                = 119468
+openat(AT_FDCWD, "/dev/urandom", O_RDONLY|O_CLOEXEC) = 5
+read(5, "\376\303\0342\224u\320\304\245\355\300f\215\272\272t\5\337\316{\210\314|w\223\205\356\300\345G\376\20"..., 44) = 44
+close(5)                                = 0
+pwrite64(4, "\0\0\0\0\0\0\0\0\0\0\0\0\35\7\fF\0\0\0\0\0\0\2\0\0\0\20\0\0\0\0\0"..., 512, 0) = 512
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+pread64(4, "", 8, 512)                  = 0
+fdatasync(4)                            = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100", O_RDONLY|O_CLOEXEC) = 5
+fdatasync(5)                            = 0
+close(5)                                = 0
+pwrite64(4, "\331\325\5\371 \241c\327\0\0\0\0", 12, 0) = 12
+fdatasync(4)                            = 0
+pwrite64(3, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\1\0\0\0\4"..., 4096, 0) = 4096
+pwrite64(3, "\r\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 4096) = 4096
+pwrite64(3, "\n\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 8192) = 4096
+pwrite64(3, "\r\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 12288) = 4096
+fdatasync(3)                            = 0
+close(4)                                = 0
+unlink("/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal") = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=2}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=0, l_len=0}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", 0x7ffe6cba7a30, 0) = -1 ENOENT (No such file or directory)
+pread64(3, "\0\0\0\1\0\0\0\4\0\0\0\0\0\0\0\0", 16, 24) = 16
+fstat(3, {st_mode=S_IFREG|0644, st_size=16384, ...}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741825, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=16384, ...}, 0) = 0
+getpid()                                = 119468
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=16384, ...}, 0) = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0644) = 4
+fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+geteuid()                               = 1000
+pwrite64(4, "\0\0\0\0\0\0\0\0\0\0\0\0\34z\247\347\0\0\0\4\0\0\2\0\0\0\20\0\0\0\0\0"..., 512, 0) = 512
+pwrite64(4, "\0\0\0\1", 4, 512)         = 4
+pwrite64(4, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\1\0\0\0\4"..., 4096, 516) = 4096
+pwrite64(4, "\34z\250Z", 4, 4612)       = 4
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+pread64(4, "", 8, 5120)                 = 0
+fdatasync(4)                            = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100", O_RDONLY|O_CLOEXEC) = 5
+fdatasync(5)                            = 0
+close(5)                                = 0
+pwrite64(4, "\331\325\5\371 \241c\327\0\0\0\1", 12, 0) = 12
+fdatasync(4)                            = 0
+pwrite64(3, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\2\0\0\0\5"..., 4096, 0) = 4096
+pwrite64(3, "\r\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 16384) = 4096
+fdatasync(3)                            = 0
+close(4)                                = 0
+unlink("/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal") = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=2}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=0, l_len=0}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", 0x7ffe6cba7a30, 0) = -1 ENOENT (No such file or directory)
+pread64(3, "\0\0\0\2\0\0\0\5\0\0\0\0\0\0\0\0", 16, 24) = 16
+fstat(3, {st_mode=S_IFREG|0644, st_size=20480, ...}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741825, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, 0) = 0
+getpid()                                = 119468
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, 0) = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0644) = 4
+fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+geteuid()                               = 1000
+pwrite64(4, "\0\0\0\0\0\0\0\0\0\0\0\0?\372(!\0\0\0\5\0\0\2\0\0\0\20\0\0\0\0\0"..., 512, 0) = 512
+pwrite64(4, "\0\0\0\3", 4, 512)         = 4
+pwrite64(4, "\n\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 516) = 4096
+pwrite64(4, "?\372(!", 4, 4612)         = 4
+pwrite64(4, "\0\0\0\2", 4, 4616)        = 4
+pwrite64(4, "\r\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 4620) = 4096
+pwrite64(4, "?\372(!", 4, 8716)         = 4
+pwrite64(4, "\0\0\0\4", 4, 8720)        = 4
+pwrite64(4, "\r\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 8724) = 4096
+pwrite64(4, "?\372(!", 4, 12820)        = 4
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+pwrite64(4, "\0\0\0\1", 4, 12824)       = 4
+pwrite64(4, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\2\0\0\0\5"..., 4096, 12828) = 4096
+pwrite64(4, "?\372(\346", 4, 16924)     = 4
+pread64(4, "", 8, 17408)                = 0
+fdatasync(4)                            = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100", O_RDONLY|O_CLOEXEC) = 5
+fdatasync(5)                            = 0
+close(5)                                = 0
+pwrite64(4, "\331\325\5\371 \241c\327\0\0\0\4", 12, 0) = 12
+fdatasync(4)                            = 0
+pwrite64(3, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\3\0\0\0\5"..., 4096, 0) = 4096
+pwrite64(3, "\r\0\0\0\2\17\314\0\17\344\17\314\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 4096) = 4096
+pwrite64(3, "\n\0\0\0\2\17\327\0\17\353\17\327\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 8192) = 4096
+pwrite64(3, "\r\0\0\0\1\17\365\0\17\365\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 12288) = 4096
+fdatasync(3)                            = 0
+close(4)                                = 0
+unlink("/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal") = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=2}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=0, l_len=0}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", 0x7ffe6cba7a30, 0) = -1 ENOENT (No such file or directory)
+pread64(3, "\0\0\0\3\0\0\0\5\0\0\0\0\0\0\0\0", 16, 24) = 16
+fstat(3, {st_mode=S_IFREG|0644, st_size=20480, ...}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741825, l_len=1}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, 0) = 0
+getpid()                                = 119468
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, 0) = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0644) = 4
+fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+geteuid()                               = 1000
+pwrite64(4, "\0\0\0\0\0\0\0\0\0\0\0\0\375AJ\270\0\0\0\5\0\0\2\0\0\0\20\0\0\0\0\0"..., 512, 0) = 512
+pwrite64(4, "\0\0\0\5", 4, 512)         = 4
+pwrite64(4, "\r\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 516) = 4096
+pwrite64(4, "\375AJ\270", 4, 4612)      = 4
+pwrite64(4, "\0\0\0\4", 4, 4616)        = 4
+pwrite64(4, "\r\0\0\0\1\17\365\0\17\365\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 4620) = 4096
+pwrite64(4, "\375AJ\270", 4, 8716)      = 4
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=1}) = 0
+fcntl(3, F_SETLK, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+pwrite64(4, "\0\0\0\1", 4, 8720)        = 4
+pwrite64(4, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\3\0\0\0\5"..., 4096, 8724) = 4096
+pwrite64(4, "\375AK}", 4, 12820)        = 4
+pread64(4, "", 8, 13312)                = 0
+fdatasync(4)                            = 0
+openat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100", O_RDONLY|O_CLOEXEC) = 5
+fdatasync(5)                            = 0
+close(5)                                = 0
+pwrite64(4, "\331\325\5\371 \241c\327\0\0\0\3", 12, 0) = 12
+fdatasync(4)                            = 0
+pwrite64(3, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\4\0\0\0\5"..., 4096, 0) = 4096
+pwrite64(3, "\r\0\0\0\2\17\351\0\17\365\17\351\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 12288) = 4096
+pwrite64(3, "\r\0\0\0\3\17\306\0\17\353\17\327\17\306\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096, 16384) = 4096
+fdatasync(3)                            = 0
+close(4)                                = 0
+unlink("/home/catab/Downloads/sqlite-src-3510100/testdb.db-journal") = 0
+fcntl(3, F_SETLK, {l_type=F_RDLCK, l_whence=SEEK_SET, l_start=1073741826, l_len=510}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=1073741824, l_len=2}) = 0
+fcntl(3, F_SETLK, {l_type=F_UNLCK, l_whence=SEEK_SET, l_start=0, l_len=0}) = 0
+write(1, "sqlite> ", 8)                 = 8
+read(0, ".exit\n", 1024)                = 6
+fstat(3, {st_mode=S_IFREG|0644, st_size=20480, ...}) = 0
+newfstatat(AT_FDCWD, "/home/catab/Downloads/sqlite-src-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, 0) = 0
+close(3)                                = 0
+exit_group(0)                           = ?
++++ exited with 0 +++

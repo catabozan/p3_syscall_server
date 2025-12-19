@@ -1,0 +1,72 @@
+execve("./sqlite3", ["./sqlite3", "testdb.db"], 0x7ffc31bcd418 /* 72 vars */) = 0
+brk(NULL)                               = 0x17596000
+brk(0x17596d40)                         = 0x17596d40
+arch_prctl(ARCH_SET_FS, 0x175963c0)     = 0
+set_tid_address(0x17596690)             = 35991
+set_robust_list(0x175966a0, 24)         = 0
+rseq(0x17596320, 0x20, 0, 0x53053053)   = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+readlinkat(AT_FDCWD, "/proc/self/exe", "/home/catab/hearc/IL3/P3_TB/sqli"..., 4096) = 63
+getrandom("\xa8\xaa\x63\xa7\xc4\xbf\x09\x83", 8, GRND_NONBLOCK) = 8
+brk(NULL)                               = 0x17596d40
+brk(0x175b7d40)                         = 0x175b7d40
+brk(0x175b8000)                         = 0x175b8000
+mprotect(0x620000, 36864, PROT_READ)    = 0
+ioctl(0, TCGETS, {c_iflag=BRKINT|ICRNL|IXON|IXANY|IMAXBEL|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD|HUPCL, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(1, TCGETS, {c_iflag=BRKINT|ICRNL|IXON|IXANY|IMAXBEL|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD|HUPCL, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+rt_sigaction(SIGINT, {sa_handler=0x412f40, sa_mask=[INT], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x500ee0}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+access("testdb.db", F_OK)               = 0
+access("testdb.db", F_OK)               = 0
+openat(AT_FDCWD, "testdb.db", O_RDONLY) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=20480, ...}) = 0
+read(3, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\4\0\0\0\5"..., 4096) = 4096
+close(3)                                = 0
+getcwd("/home/catab/hearc/IL3/P3_TB/sqlite-amalgamation-3510100", 4096) = 56
+newfstatat(AT_FDCWD, "/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab", {st_mode=S_IFDIR|0700, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/hearc", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/hearc/IL3", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/hearc/IL3/P3_TB", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/hearc/IL3/P3_TB/sqlite-amalgamation-3510100", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/catab/hearc/IL3/P3_TB/sqlite-amalgamation-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, AT_SYMLINK_NOFOLLOW) = 0
+getpid()                                = 35991
+getpid()                                = 35991
+openat(AT_FDCWD, "/home/catab/hearc/IL3/P3_TB/sqlite-amalgamation-3510100/testdb.db", O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0644) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=20480, ...}) = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=20480, ...}) = 0
+newfstatat(AT_FDCWD, "/home/catab/hearc/IL3/P3_TB/sqlite-amalgamation-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, 0) = 0
+pread64(3, "SQLite format 3\0\20\0\1\1\0@  \0\0\0\4\0\0\0\5"..., 100, 0) = 100
+getuid()                                = 1000
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 4
+connect(4, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(4)                                = 0
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 4
+connect(4, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(4)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=580, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/nsswitch.conf", O_RDONLY|O_CLOEXEC) = 4
+fstat(4, {st_mode=S_IFREG|0644, st_size=580, ...}) = 0
+read(4, "# /etc/nsswitch.conf\n#\n# Example"..., 4096) = 580
+read(4, "", 4096)                       = 0
+fstat(4, {st_mode=S_IFREG|0644, st_size=580, ...}) = 0
+close(4)                                = 0
+openat(AT_FDCWD, "/etc/passwd", O_RDONLY|O_CLOEXEC) = 4
+fstat(4, {st_mode=S_IFREG|0644, st_size=2544, ...}) = 0
+lseek(4, 0, SEEK_SET)                   = 0
+read(4, "root:x:0:0:root:/root:/usr/bin/z"..., 4096) = 2544
+close(4)                                = 0
+access("/home/catab/.config/sqlite3/sqliterc", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/home/catab/.sqliterc", O_RDONLY) = -1 ENOENT (No such file or directory)
+fstat(1, {st_mode=S_IFCHR|0600, st_rdev=makedev(0x88, 0), ...}) = 0
+write(1, "SQLite version 3.51.1 2025-11-28"..., 42) = 42
+write(1, "Enter \".help\" for usage hints.\n", 31) = 31
+access("/home/catab/.local/state/sqlite_history", F_OK) = -1 ENOENT (No such file or directory)
+write(1, "sqlite> ", 8)                 = 8
+fstat(0, {st_mode=S_IFCHR|0600, st_rdev=makedev(0x88, 0), ...}) = 0
+read(0, ".exit\n", 1024)                = 6
+fstat(3, {st_mode=S_IFREG|0644, st_size=20480, ...}) = 0
+newfstatat(AT_FDCWD, "/home/catab/hearc/IL3/P3_TB/sqlite-amalgamation-3510100/testdb.db", {st_mode=S_IFREG|0644, st_size=20480, ...}, 0) = 0
+close(3)                                = 0
+exit_group(0)                           = ?
++++ exited with 0 +++

@@ -2,6 +2,9 @@
  * close() syscall interceptor
  */
 
+#ifndef __INTERCEPT_CLOSE_
+#define __INTERCEPT_CLOSE_
+
 /* Thread-local reentry guard */
 static __thread int in_close_intercept = 0;
 
@@ -68,3 +71,5 @@ int close(int fd) {
 
     return result;
 }
+
+#endif

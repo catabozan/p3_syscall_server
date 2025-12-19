@@ -58,8 +58,16 @@ int stat(const char *pathname, struct stat *statbuf) {
             if (result >= 0) {
                 /* Success: populate statbuf with response data */
                 memset(statbuf, 0, sizeof(struct stat));
+                statbuf->st_dev = res->dev;
+                statbuf->st_ino = res->ino;
                 statbuf->st_mode = res->mode;
+                statbuf->st_nlink = res->nlink;
+                statbuf->st_uid = res->uid;
+                statbuf->st_gid = res->gid;
+                statbuf->st_rdev = res->rdev;
                 statbuf->st_size = res->size;
+                statbuf->st_blksize = res->blksize;
+                statbuf->st_blocks = res->blocks;
                 statbuf->st_atime = res->atime;
                 statbuf->st_mtime = res->mtime;
                 statbuf->st_ctime = res->ctime;

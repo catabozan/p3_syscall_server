@@ -2,6 +2,9 @@
  * open() syscall interceptor
  */
 
+#ifndef __INTERCEPT_OPEN_
+#define __INTERCEPT_OPEN_
+
 #include <stdarg.h>
 #include <fcntl.h>
 
@@ -100,3 +103,5 @@ int open64(const char *pathname, int flags, ...) {
     /* Just call open() with O_LARGEFILE flag */
     return open(pathname, flags | O_LARGEFILE, mode);
 }
+
+#endif

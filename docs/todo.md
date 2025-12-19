@@ -1,3 +1,9 @@
+## task 5
+- [ ] find socket() and newfstatat() uses in sqlite3 and get rid of them
+  - [ ] use debugger?
+- [ ] check syscalls for "weird" behavior and disable like "openat(AT_FDCWD, "/etc/passwd", O_RDONLY|O_CLOEXEC) = 3"
+- [ ] ./configure --help, disable all unnecessary deps
+
 ## task 4
 - [ ] check syscalls for sqlite
 - [ ] chunk buffers in protocol calls when client asks for buff bigger than protocol limit

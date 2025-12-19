@@ -1,0 +1,42 @@
+Invoked as: ./configure --disable-static --disable-threadsafe --with-tempstore=no --disable-load-extension --disable-math --disable-json --disable-carray --disable-readline --disable-tcl --disable-rpath
+Tclsh: /usr/bin/tclsh
+Failed: cc -c -O2 -g conftest__.c -o conftest__.o
+conftest__.c: In function ‘main’:
+conftest__.c:3:12: error: size of array ‘_x’ is negative
+    3 | static int _x[sizeof(off_t) == 4 ? 1 : -1] = { 1 };
+      |            ^~
+child process exited abnormally
+============
+The failed code was:
+#include <sys/types.h>
+int main(void) {
+static int _x[sizeof(off_t) == 4 ? 1 : -1] = { 1 };
+return 0;
+}
+============
+Failed: cc -O2 -g conftest__.c -o conftest__
+/usr/bin/ld: /tmp/ccuwq7Y8.o: in function `main':
+/home/catab/hearc/IL3/P3_TB/sqlite-src-3510100/conftest__.c:3:(.text.startup+0x5): undefined reference to `localtime_s'
+collect2: error: ld returned 1 exit status
+child process exited abnormally
+============
+The failed code was:
+extern void localtime_s(void);
+int main(void) {
+localtime_s();
+return 0;
+}
+============
+Failed: cc -O2 -g conftest__.c -o conftest__
+/usr/bin/ld: /tmp/cc1I7LPh.o: in function `main':
+/home/catab/hearc/IL3/P3_TB/sqlite-src-3510100/conftest__.c:3:(.text.startup+0x5): undefined reference to `deflate'
+collect2: error: ld returned 1 exit status
+child process exited abnormally
+============
+The failed code was:
+extern void deflate(void);
+int main(void) {
+deflate();
+return 0;
+}
+============

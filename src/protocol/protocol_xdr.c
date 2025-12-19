@@ -34,6 +34,36 @@ xdr_open_response (XDR *xdrs, open_response *objp)
 }
 
 bool_t
+xdr_openat_request (XDR *xdrs, openat_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->dirfd))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->path, MAX_PATH_LEN))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->flags))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->mode))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_openat_response (XDR *xdrs, openat_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
 xdr_close_request (XDR *xdrs, close_request *objp)
 {
 	register int32_t *buf;
@@ -82,6 +112,34 @@ xdr_read_response (XDR *xdrs, read_response *objp)
 }
 
 bool_t
+xdr_pread_request (XDR *xdrs, pread_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	 if (!xdr_long (xdrs, &objp->offset))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->count))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_pread_response (XDR *xdrs, pread_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_bytes (xdrs, (char **)&objp->data.data_val, (u_int *) &objp->data.data_len, MAX_BUFFER_SIZE))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
 xdr_write_request (XDR *xdrs, write_request *objp)
 {
 	register int32_t *buf;
@@ -95,6 +153,32 @@ xdr_write_request (XDR *xdrs, write_request *objp)
 
 bool_t
 xdr_write_response (XDR *xdrs, write_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_pwrite_request (XDR *xdrs, pwrite_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	 if (!xdr_long (xdrs, &objp->offset))
+		 return FALSE;
+	 if (!xdr_bytes (xdrs, (char **)&objp->data.data_val, (u_int *) &objp->data.data_len, MAX_BUFFER_SIZE))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_pwrite_response (XDR *xdrs, pwrite_response *objp)
 {
 	register int32_t *buf;
 
@@ -122,54 +206,106 @@ xdr_stat_response (XDR *xdrs, stat_response *objp)
 
 
 	if (xdrs->x_op == XDR_ENCODE) {
-		buf = XDR_INLINE (xdrs, 7 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 9 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->result))
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->err))
 				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->dev))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ino))
+				 return FALSE;
 			 if (!xdr_u_int (xdrs, &objp->mode))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->size))
+			 if (!xdr_u_int (xdrs, &objp->nlink))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->atime))
+			 if (!xdr_u_int (xdrs, &objp->uid))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->mtime))
+			 if (!xdr_u_int (xdrs, &objp->gid))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->ctime))
+			 if (!xdr_u_long (xdrs, &objp->rdev))
+				 return FALSE;
+
+		} else {
+		IXDR_PUT_LONG(buf, objp->result);
+		IXDR_PUT_LONG(buf, objp->err);
+		IXDR_PUT_U_LONG(buf, objp->dev);
+		IXDR_PUT_U_LONG(buf, objp->ino);
+		IXDR_PUT_U_LONG(buf, objp->mode);
+		IXDR_PUT_U_LONG(buf, objp->nlink);
+		IXDR_PUT_U_LONG(buf, objp->uid);
+		IXDR_PUT_U_LONG(buf, objp->gid);
+		IXDR_PUT_U_LONG(buf, objp->rdev);
+		}
+		 if (!xdr_u_quad_t (xdrs, &objp->size))
+			 return FALSE;
+		 if (!xdr_u_long (xdrs, &objp->blksize))
+			 return FALSE;
+		 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+			 return FALSE;
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->atime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mtime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ctime))
 				 return FALSE;
 		} else {
-			IXDR_PUT_LONG(buf, objp->result);
-			IXDR_PUT_LONG(buf, objp->err);
-			IXDR_PUT_U_LONG(buf, objp->mode);
-			IXDR_PUT_U_LONG(buf, objp->size);
 			IXDR_PUT_U_LONG(buf, objp->atime);
 			IXDR_PUT_U_LONG(buf, objp->mtime);
 			IXDR_PUT_U_LONG(buf, objp->ctime);
 		}
 		return TRUE;
 	} else if (xdrs->x_op == XDR_DECODE) {
-		buf = XDR_INLINE (xdrs, 7 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 9 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->result))
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->err))
 				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->dev))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ino))
+				 return FALSE;
 			 if (!xdr_u_int (xdrs, &objp->mode))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->size))
+			 if (!xdr_u_int (xdrs, &objp->nlink))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->atime))
+			 if (!xdr_u_int (xdrs, &objp->uid))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->mtime))
+			 if (!xdr_u_int (xdrs, &objp->gid))
 				 return FALSE;
-			 if (!xdr_u_int (xdrs, &objp->ctime))
+			 if (!xdr_u_long (xdrs, &objp->rdev))
+				 return FALSE;
+
+		} else {
+		objp->result = IXDR_GET_LONG(buf);
+		objp->err = IXDR_GET_LONG(buf);
+		objp->dev = IXDR_GET_U_LONG(buf);
+		objp->ino = IXDR_GET_U_LONG(buf);
+		objp->mode = IXDR_GET_U_LONG(buf);
+		objp->nlink = IXDR_GET_U_LONG(buf);
+		objp->uid = IXDR_GET_U_LONG(buf);
+		objp->gid = IXDR_GET_U_LONG(buf);
+		objp->rdev = IXDR_GET_U_LONG(buf);
+		}
+		 if (!xdr_u_quad_t (xdrs, &objp->size))
+			 return FALSE;
+		 if (!xdr_u_long (xdrs, &objp->blksize))
+			 return FALSE;
+		 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+			 return FALSE;
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->atime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mtime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ctime))
 				 return FALSE;
 		} else {
-			objp->result = IXDR_GET_LONG(buf);
-			objp->err = IXDR_GET_LONG(buf);
-			objp->mode = IXDR_GET_U_LONG(buf);
-			objp->size = IXDR_GET_U_LONG(buf);
 			objp->atime = IXDR_GET_U_LONG(buf);
 			objp->mtime = IXDR_GET_U_LONG(buf);
 			objp->ctime = IXDR_GET_U_LONG(buf);
@@ -181,15 +317,451 @@ xdr_stat_response (XDR *xdrs, stat_response *objp)
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->err))
 		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->dev))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->ino))
+		 return FALSE;
 	 if (!xdr_u_int (xdrs, &objp->mode))
 		 return FALSE;
-	 if (!xdr_u_int (xdrs, &objp->size))
+	 if (!xdr_u_int (xdrs, &objp->nlink))
 		 return FALSE;
-	 if (!xdr_u_int (xdrs, &objp->atime))
+	 if (!xdr_u_int (xdrs, &objp->uid))
 		 return FALSE;
-	 if (!xdr_u_int (xdrs, &objp->mtime))
+	 if (!xdr_u_int (xdrs, &objp->gid))
 		 return FALSE;
-	 if (!xdr_u_int (xdrs, &objp->ctime))
+	 if (!xdr_u_long (xdrs, &objp->rdev))
+		 return FALSE;
+	 if (!xdr_u_quad_t (xdrs, &objp->size))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->blksize))
+		 return FALSE;
+	 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->atime))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->mtime))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->ctime))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_newfstatat_request (XDR *xdrs, newfstatat_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->dirfd))
+		 return FALSE;
+	 if (!xdr_string (xdrs, &objp->path, MAX_PATH_LEN))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->flags))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_newfstatat_response (XDR *xdrs, newfstatat_response *objp)
+{
+	register int32_t *buf;
+
+
+	if (xdrs->x_op == XDR_ENCODE) {
+		buf = XDR_INLINE (xdrs, 9 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->result))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->err))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->dev))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ino))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->nlink))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->uid))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->gid))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->rdev))
+				 return FALSE;
+
+		} else {
+		IXDR_PUT_LONG(buf, objp->result);
+		IXDR_PUT_LONG(buf, objp->err);
+		IXDR_PUT_U_LONG(buf, objp->dev);
+		IXDR_PUT_U_LONG(buf, objp->ino);
+		IXDR_PUT_U_LONG(buf, objp->mode);
+		IXDR_PUT_U_LONG(buf, objp->nlink);
+		IXDR_PUT_U_LONG(buf, objp->uid);
+		IXDR_PUT_U_LONG(buf, objp->gid);
+		IXDR_PUT_U_LONG(buf, objp->rdev);
+		}
+		 if (!xdr_u_quad_t (xdrs, &objp->size))
+			 return FALSE;
+		 if (!xdr_u_long (xdrs, &objp->blksize))
+			 return FALSE;
+		 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+			 return FALSE;
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->atime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mtime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ctime))
+				 return FALSE;
+		} else {
+			IXDR_PUT_U_LONG(buf, objp->atime);
+			IXDR_PUT_U_LONG(buf, objp->mtime);
+			IXDR_PUT_U_LONG(buf, objp->ctime);
+		}
+		return TRUE;
+	} else if (xdrs->x_op == XDR_DECODE) {
+		buf = XDR_INLINE (xdrs, 9 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->result))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->err))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->dev))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ino))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->nlink))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->uid))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->gid))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->rdev))
+				 return FALSE;
+
+		} else {
+		objp->result = IXDR_GET_LONG(buf);
+		objp->err = IXDR_GET_LONG(buf);
+		objp->dev = IXDR_GET_U_LONG(buf);
+		objp->ino = IXDR_GET_U_LONG(buf);
+		objp->mode = IXDR_GET_U_LONG(buf);
+		objp->nlink = IXDR_GET_U_LONG(buf);
+		objp->uid = IXDR_GET_U_LONG(buf);
+		objp->gid = IXDR_GET_U_LONG(buf);
+		objp->rdev = IXDR_GET_U_LONG(buf);
+		}
+		 if (!xdr_u_quad_t (xdrs, &objp->size))
+			 return FALSE;
+		 if (!xdr_u_long (xdrs, &objp->blksize))
+			 return FALSE;
+		 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+			 return FALSE;
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->atime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mtime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ctime))
+				 return FALSE;
+		} else {
+			objp->atime = IXDR_GET_U_LONG(buf);
+			objp->mtime = IXDR_GET_U_LONG(buf);
+			objp->ctime = IXDR_GET_U_LONG(buf);
+		}
+	 return TRUE;
+	}
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->dev))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->ino))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->mode))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->nlink))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->uid))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->gid))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->rdev))
+		 return FALSE;
+	 if (!xdr_u_quad_t (xdrs, &objp->size))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->blksize))
+		 return FALSE;
+	 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->atime))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->mtime))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->ctime))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_fstat_request (XDR *xdrs, fstat_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_fstat_response (XDR *xdrs, fstat_response *objp)
+{
+	register int32_t *buf;
+
+
+	if (xdrs->x_op == XDR_ENCODE) {
+		buf = XDR_INLINE (xdrs, 9 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->result))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->err))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->dev))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ino))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->nlink))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->uid))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->gid))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->rdev))
+				 return FALSE;
+
+		} else {
+		IXDR_PUT_LONG(buf, objp->result);
+		IXDR_PUT_LONG(buf, objp->err);
+		IXDR_PUT_U_LONG(buf, objp->dev);
+		IXDR_PUT_U_LONG(buf, objp->ino);
+		IXDR_PUT_U_LONG(buf, objp->mode);
+		IXDR_PUT_U_LONG(buf, objp->nlink);
+		IXDR_PUT_U_LONG(buf, objp->uid);
+		IXDR_PUT_U_LONG(buf, objp->gid);
+		IXDR_PUT_U_LONG(buf, objp->rdev);
+		}
+		 if (!xdr_u_quad_t (xdrs, &objp->size))
+			 return FALSE;
+		 if (!xdr_u_long (xdrs, &objp->blksize))
+			 return FALSE;
+		 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+			 return FALSE;
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->atime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mtime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ctime))
+				 return FALSE;
+		} else {
+			IXDR_PUT_U_LONG(buf, objp->atime);
+			IXDR_PUT_U_LONG(buf, objp->mtime);
+			IXDR_PUT_U_LONG(buf, objp->ctime);
+		}
+		return TRUE;
+	} else if (xdrs->x_op == XDR_DECODE) {
+		buf = XDR_INLINE (xdrs, 9 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->result))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->err))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->dev))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ino))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->mode))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->nlink))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->uid))
+				 return FALSE;
+			 if (!xdr_u_int (xdrs, &objp->gid))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->rdev))
+				 return FALSE;
+
+		} else {
+		objp->result = IXDR_GET_LONG(buf);
+		objp->err = IXDR_GET_LONG(buf);
+		objp->dev = IXDR_GET_U_LONG(buf);
+		objp->ino = IXDR_GET_U_LONG(buf);
+		objp->mode = IXDR_GET_U_LONG(buf);
+		objp->nlink = IXDR_GET_U_LONG(buf);
+		objp->uid = IXDR_GET_U_LONG(buf);
+		objp->gid = IXDR_GET_U_LONG(buf);
+		objp->rdev = IXDR_GET_U_LONG(buf);
+		}
+		 if (!xdr_u_quad_t (xdrs, &objp->size))
+			 return FALSE;
+		 if (!xdr_u_long (xdrs, &objp->blksize))
+			 return FALSE;
+		 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+			 return FALSE;
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_long (xdrs, &objp->atime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->mtime))
+				 return FALSE;
+			 if (!xdr_u_long (xdrs, &objp->ctime))
+				 return FALSE;
+		} else {
+			objp->atime = IXDR_GET_U_LONG(buf);
+			objp->mtime = IXDR_GET_U_LONG(buf);
+			objp->ctime = IXDR_GET_U_LONG(buf);
+		}
+	 return TRUE;
+	}
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->dev))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->ino))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->mode))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->nlink))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->uid))
+		 return FALSE;
+	 if (!xdr_u_int (xdrs, &objp->gid))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->rdev))
+		 return FALSE;
+	 if (!xdr_u_quad_t (xdrs, &objp->size))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->blksize))
+		 return FALSE;
+	 if (!xdr_u_quad_t (xdrs, &objp->blocks))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->atime))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->mtime))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->ctime))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_flock_data (XDR *xdrs, flock_data *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_short (xdrs, &objp->l_type))
+		 return FALSE;
+	 if (!xdr_short (xdrs, &objp->l_whence))
+		 return FALSE;
+	 if (!xdr_quad_t (xdrs, &objp->l_start))
+		 return FALSE;
+	 if (!xdr_quad_t (xdrs, &objp->l_len))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->l_pid))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_fcntl_arg_type (XDR *xdrs, fcntl_arg_type *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_enum (xdrs, (enum_t *) objp))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_fcntl_arg (XDR *xdrs, fcntl_arg *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_fcntl_arg_type (xdrs, &objp->type))
+		 return FALSE;
+	switch (objp->type) {
+	case FCNTL_ARG_NONE:
+		break;
+	case FCNTL_ARG_INT:
+		 if (!xdr_int (xdrs, &objp->fcntl_arg_u.int_arg))
+			 return FALSE;
+		break;
+	case FCNTL_ARG_FLOCK:
+		 if (!xdr_flock_data (xdrs, &objp->fcntl_arg_u.flock_arg))
+			 return FALSE;
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+bool_t
+xdr_fcntl_request (XDR *xdrs, fcntl_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->cmd))
+		 return FALSE;
+	 if (!xdr_fcntl_arg (xdrs, &objp->arg))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_fcntl_response (XDR *xdrs, fcntl_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	 if (!xdr_fcntl_arg (xdrs, &objp->arg_out))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_fdatasync_request (XDR *xdrs, fdatasync_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_fdatasync_response (XDR *xdrs, fdatasync_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
 		 return FALSE;
 	return TRUE;
 }

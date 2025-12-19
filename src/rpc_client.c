@@ -128,7 +128,14 @@ static void cleanup_rpc_client(void) {
  * Include all interceptor implementations
  */
 #include "intercept/intercept_open.h"
+#include "intercept/intercept_openat.h"
 #include "intercept/intercept_close.h"
 #include "intercept/intercept_read.h"
+#include "intercept/intercept_pread.h"
 #include "intercept/intercept_write.h"
+#include "intercept/intercept_pwrite.h"
 #include "intercept/intercept_stat.h"
+#include "intercept/intercept_newfstatat.h"
+#include "intercept/intercept_fstat.h"
+#include "intercept/intercept_fcntl.h"
+#include "intercept/intercept_fdatasync.h"

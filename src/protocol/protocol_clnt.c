@@ -24,6 +24,21 @@ syscall_open_1(open_request *argp, CLIENT *clnt)
 	return (&clnt_res);
 }
 
+openat_response *
+syscall_openat_1(openat_request *argp, CLIENT *clnt)
+{
+	static openat_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_OPENAT,
+		(xdrproc_t) xdr_openat_request, (caddr_t) argp,
+		(xdrproc_t) xdr_openat_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
 close_response *
 syscall_close_1(close_request *argp, CLIENT *clnt)
 {
@@ -54,6 +69,21 @@ syscall_read_1(read_request *argp, CLIENT *clnt)
 	return (&clnt_res);
 }
 
+pread_response *
+syscall_pread_1(pread_request *argp, CLIENT *clnt)
+{
+	static pread_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_PREAD,
+		(xdrproc_t) xdr_pread_request, (caddr_t) argp,
+		(xdrproc_t) xdr_pread_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
 write_response *
 syscall_write_1(write_request *argp, CLIENT *clnt)
 {
@@ -69,6 +99,21 @@ syscall_write_1(write_request *argp, CLIENT *clnt)
 	return (&clnt_res);
 }
 
+pwrite_response *
+syscall_pwrite_1(pwrite_request *argp, CLIENT *clnt)
+{
+	static pwrite_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_PWRITE,
+		(xdrproc_t) xdr_pwrite_request, (caddr_t) argp,
+		(xdrproc_t) xdr_pwrite_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
 stat_response *
 syscall_stat_1(stat_request *argp, CLIENT *clnt)
 {
@@ -78,6 +123,66 @@ syscall_stat_1(stat_request *argp, CLIENT *clnt)
 	if (clnt_call (clnt, SYSCALL_STAT,
 		(xdrproc_t) xdr_stat_request, (caddr_t) argp,
 		(xdrproc_t) xdr_stat_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+newfstatat_response *
+syscall_newfstatat_1(newfstatat_request *argp, CLIENT *clnt)
+{
+	static newfstatat_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_NEWFSTATAT,
+		(xdrproc_t) xdr_newfstatat_request, (caddr_t) argp,
+		(xdrproc_t) xdr_newfstatat_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+fstat_response *
+syscall_fstat_1(fstat_request *argp, CLIENT *clnt)
+{
+	static fstat_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_FSTAT,
+		(xdrproc_t) xdr_fstat_request, (caddr_t) argp,
+		(xdrproc_t) xdr_fstat_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+fcntl_response *
+syscall_fcntl_1(fcntl_request *argp, CLIENT *clnt)
+{
+	static fcntl_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_FCNTL,
+		(xdrproc_t) xdr_fcntl_request, (caddr_t) argp,
+		(xdrproc_t) xdr_fcntl_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+fdatasync_response *
+syscall_fdatasync_1(fdatasync_request *argp, CLIENT *clnt)
+{
+	static fdatasync_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_FDATASYNC,
+		(xdrproc_t) xdr_fdatasync_request, (caddr_t) argp,
+		(xdrproc_t) xdr_fdatasync_response, (caddr_t) &clnt_res,
 		TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);
 	}

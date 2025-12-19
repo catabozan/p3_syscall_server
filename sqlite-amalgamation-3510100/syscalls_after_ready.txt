@@ -1,0 +1,17 @@
+52 fcntl(
+45 pwrite64(
+24 newfstatat(
+17 write(
+16 fsync(
+16 fstat(
+12 read(
+12 pread64(
+10 openat(
+10 close(
+7 getpid(
+4 unlink(
+4 geteuid(
+1 getcwd(
+1 exit_group(
+1 brk(
+1 access(

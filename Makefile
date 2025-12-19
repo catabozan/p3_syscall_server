@@ -25,6 +25,7 @@ GENERATED_FILES := $(PROTOCOL_H) $(PROTOCOL_XDR) $(PROTOCOL_CLNT) $(PROTOCOL_SVC
 .PHONY: all clean create_folders rpc_gen server client program run_server run_program
 
 all: create_folders rpc_gen server client program
+all_temp: create_folders rpc_gen server client program_temp
 
 create_folders:
 	mkdir -p $(BUILD_FOLDER)
@@ -63,6 +64,10 @@ program: create_folders
 	$(CC) -o $(BUILD_FOLDER)program $(SRC_FOLDER)program.c
 	chmod +x $(BUILD_FOLDER)program
 
+program_temp: create_folders
+	$(CC) -o $(BUILD_FOLDER)program $(SRC_FOLDER)program_temp.c
+	chmod +x $(BUILD_FOLDER)program
+
 clean:
 	rm -rf $(BUILD_FOLDER)*
 	rm -f $(GENERATED_FILES)
@@ -72,3 +77,6 @@ run_server:
 
 run_program:
 	LD_PRELOAD=$(BUILD_FOLDER)intercept.so $(BUILD_FOLDER)program
+
+run_sqlite:
+	LD_PRELOAD=$(BUILD_FOLDER)intercept.so ./sqlite-src-3510100/sqlite3 test.db

@@ -50,6 +50,35 @@ static int add_fd_mapping(int server_fd) {
     return client_fd;
 }
 
+/* Add FD mapping with minimum FD requirement (for F_DUPFD) */
+static int add_fd_mapping_from(int server_fd, int min_fd) {
+    /* Find first available client FD >= min_fd */
+    int client_fd = (min_fd > next_client_fd) ? min_fd : next_client_fd;
+
+    /* Search for available slot */
+    while (client_fd < MAX_FDS) {
+        if (fd_mapping[client_fd] == -1) {
+            /* Found available slot */
+            fd_mapping[client_fd] = server_fd;
+
+            /* Update next_client_fd if necessary */
+            if (client_fd >= next_client_fd) {
+                next_client_fd = client_fd + 1;
+            }
+
+            fprintf(stderr, "[Server] FD mapping: client_fd=%d -> server_fd=%d (min_fd=%d)\n",
+                    client_fd, server_fd, min_fd);
+
+            return client_fd;
+        }
+        client_fd++;
+    }
+
+    /* No available slot found */
+    fprintf(stderr, "Error: FD mapping table full (min_fd=%d)\n", min_fd);
+    return -1;
+}
+
 /* Remove FD mapping */
 static void remove_fd_mapping(int client_fd) {
     if (client_fd >= 0 && client_fd < MAX_FDS) {
@@ -103,6 +132,46 @@ syscall_open_1_svc(open_request *req, struct svc_req *rqstp) {
     }
 
     fprintf(stderr, "[Server] OPEN result: fd=%d, errno=%d\n", res.result, res.err);
+
+    return &res;
+}
+
+/*
+ * SYSCALL_OPEN implementation
+ */
+openat_response *
+syscall_openat_1_svc(openat_request *req, struct svc_req *rqstp) {
+    static openat_response res;
+
+    fprintf(stderr, "[Server] OPENAT: dirfd=%d path=%s, flags=%d, mode=%o\n",
+            req->dirfd, req->path, req->flags, req->mode);
+
+    /* Execute the actual open syscall */
+    int server_fd = openat(req->dirfd, req->path, req->flags, req->mode);
+    int saved_errno = errno;
+
+    if (server_fd >= 0) {
+        /* Success: create FD mapping */
+        int client_fd = add_fd_mapping(server_fd);
+        if (client_fd < 0) {
+            /* Mapping failed */
+            close(server_fd);
+            res.fd = -1;
+            res.result = -1;
+            res.err = ENFILE;  /* Too many open files */
+        } else {
+            res.fd = client_fd;
+            res.result = client_fd;
+            res.err = 0;
+        }
+    } else {
+        /* Failure */
+        res.fd = -1;
+        res.result = -1;
+        res.err = saved_errno;
+    }
+
+    fprintf(stderr, "[Server] OPENAT result: fd=%d, errno=%d\n", res.result, res.err);
 
     return &res;
 }
@@ -193,6 +262,58 @@ syscall_read_1_svc(read_request *req, struct svc_req *rqstp) {
 }
 
 /*
+ * SYSCALL_PREAD implementation
+ */
+pread_response *
+syscall_pread_1_svc(pread_request *req, struct svc_req *rqstp) {
+    static pread_response res;
+    static char buffer[MAX_BUFFER_SIZE];
+
+    fprintf(stderr, "[Server] PREAD: client_fd=%d, count=%u, offset=%u\n", req->fd, req->count, req->offset);
+
+    /* Clear previous data */
+    res.data.data_val = NULL;
+    res.data.data_len = 0;
+
+    /* Translate client FD to server FD */
+    int server_fd = translate_fd(req->fd);
+
+    if (server_fd < 0) {
+        /* Invalid FD */
+        res.result = -1;
+        res.err = EBADF;
+        fprintf(stderr, "[Server] PREAD failed: invalid client_fd=%d\n", req->fd);
+    } else {
+        /* Ensure count doesn't exceed buffer size */
+        unsigned int count = req->count;
+        if (count > MAX_BUFFER_SIZE) {
+            count = MAX_BUFFER_SIZE;
+        }
+
+        /* Execute the actual read syscall */
+        ssize_t bytes_read = pread(server_fd, buffer, count, req->offset);
+        res.err = errno;
+
+        if (bytes_read >= 0) {
+            /* Success: populate response with data */
+            res.data.data_val = buffer;
+            res.data.data_len = bytes_read;
+            res.result = bytes_read;
+        } else {
+            /* Failure */
+            res.data.data_val = NULL;
+            res.data.data_len = 0;
+            res.result = -1;
+        }
+
+        fprintf(stderr, "[Server] PREAD result: %zd bytes, errno=%d\n",
+                bytes_read, res.err);
+    }
+
+    return &res;
+}
+
+/*
  * SYSCALL_WRITE implementation
  */
 write_response *
@@ -225,6 +346,38 @@ syscall_write_1_svc(write_request *req, struct svc_req *rqstp) {
 }
 
 /*
+ * SYSCALL_PWRITE implementation
+ */
+pwrite_response *
+syscall_pwrite_1_svc(pwrite_request *req, struct svc_req *rqstp) {
+    static pwrite_response res;
+
+    fprintf(stderr, "[Server] PWRITE: client_fd=%d, count=%u, offset=%u\n",
+            req->fd, req->data.data_len, req->offset);
+
+    /* Translate client FD to server FD */
+    int server_fd = translate_fd(req->fd);
+
+    if (server_fd < 0) {
+        /* Invalid FD */
+        res.result = -1;
+        res.err = EBADF;
+        fprintf(stderr, "[Server] WRITE failed: invalid client_fd=%d\n", req->fd);
+    } else {
+        /* Execute the actual write syscall */
+        ssize_t bytes_written = pwrite(server_fd, req->data.data_val,
+                                      req->data.data_len, req->offset);
+        res.result = bytes_written;
+        res.err = errno;
+
+        fprintf(stderr, "[Server] WRITE result: %zd bytes, errno=%d\n",
+                bytes_written, res.err);
+    }
+
+    return &res;
+}
+
+/*
  * SYSCALL_STAT implementation
  */
 stat_response *
@@ -242,8 +395,16 @@ syscall_stat_1_svc(stat_request *req, struct svc_req *rqstp) {
         /* Success: populate response with stat data */
         res.result = 0;
         res.err = 0;
+        res.dev = statbuf.st_dev;
+        res.ino = statbuf.st_ino;
         res.mode = statbuf.st_mode;
+        res.nlink = statbuf.st_nlink;
+        res.uid = statbuf.st_uid;
+        res.gid = statbuf.st_gid;
+        res.rdev = statbuf.st_rdev;
         res.size = statbuf.st_size;
+        res.blksize = statbuf.st_blksize;
+        res.blocks = statbuf.st_blocks;
         res.atime = statbuf.st_atime;
         res.mtime = statbuf.st_mtime;
         res.ctime = statbuf.st_ctime;
@@ -253,15 +414,246 @@ syscall_stat_1_svc(stat_request *req, struct svc_req *rqstp) {
     } else {
         /* Failure */
         res.result = -1;
-        res.err = saved_errno;
+        res.err = 0;
+        res.dev = 0;
+        res.ino = 0;
         res.mode = 0;
+        res.nlink = 0;
+        res.uid = 0;
+        res.gid = 0;
+        res.rdev = 0;
         res.size = 0;
+        res.blksize = 0;
+        res.blocks = 0;
         res.atime = 0;
         res.mtime = 0;
         res.ctime = 0;
 
         fprintf(stderr, "[Server] STAT failed: errno=%d\n", res.err);
     }
+
+    return &res;
+}
+/*
+ * SYSCALL_NEWFSTATAT implementation
+ */
+newfstatat_response *
+syscall_newfstatat_1_svc(newfstatat_request *req, struct svc_req *rqstp) {
+    static newfstatat_response res;
+    struct stat statbuf;
+
+    fprintf(stderr, "[Server] NEWFSTATAT: dirfd=%d path=%s flags=%u\n", req->dirfd, req->path, req->flags);
+
+    /* Execute the actual stat syscall */
+    int stat_result = stat(req->path, &statbuf);
+    int saved_errno = errno;
+
+    if (stat_result == 0) {
+        /* Success: populate response with stat data */
+        res.result = 0;
+        res.err = 0;
+        res.dev = statbuf.st_dev;
+        res.ino = statbuf.st_ino;
+        res.mode = statbuf.st_mode;
+        res.nlink = statbuf.st_nlink;
+        res.uid = statbuf.st_uid;
+        res.gid = statbuf.st_gid;
+        res.rdev = statbuf.st_rdev;
+        res.size = statbuf.st_size;
+        res.blksize = statbuf.st_blksize;
+        res.blocks = statbuf.st_blocks;
+        res.atime = statbuf.st_atime;
+        res.mtime = statbuf.st_mtime;
+        res.ctime = statbuf.st_ctime;
+
+        fprintf(stderr, "[Server] NEWFSTATAT result: mode=%o, size=%u, errno=%d\n",
+                res.mode, res.size, res.err);
+    } else {
+        /* Failure */
+        res.result = -1;
+        res.err = 0;
+        res.dev = 0;
+        res.ino = 0;
+        res.mode = 0;
+        res.nlink = 0;
+        res.uid = 0;
+        res.gid = 0;
+        res.rdev = 0;
+        res.size = 0;
+        res.blksize = 0;
+        res.blocks = 0;
+        res.atime = 0;
+        res.mtime = 0;
+        res.ctime = 0;
+
+        fprintf(stderr, "[Server] NEWFSTATAT failed: errno=%d\n", res.err);
+    }
+
+    return &res;
+}
+
+/*
+ * SYSCALL_FSTAT implementation
+ */
+fstat_response *
+syscall_fstat_1_svc(fstat_request *req, struct svc_req *rqstp) {
+    static fstat_response res;
+    struct stat statbuf;
+
+    fprintf(stderr, "[Server] FSTAT: fd=%d\n", req->fd);
+
+    /* Translate client FD to server FD */
+    int server_fd = translate_fd(req->fd);
+
+    /* Execute the actual stat syscall */
+    int stat_result = fstat(server_fd, &statbuf);
+    int saved_errno = errno;
+
+    if (stat_result == 0) {
+        /* Success: populate response with stat data */
+        res.result = 0;
+        res.err = 0;
+        res.dev = statbuf.st_dev;
+        res.ino = statbuf.st_ino;
+        res.mode = statbuf.st_mode;
+        res.nlink = statbuf.st_nlink;
+        res.uid = statbuf.st_uid;
+        res.gid = statbuf.st_gid;
+        res.rdev = statbuf.st_rdev;
+        res.size = statbuf.st_size;
+        res.blksize = statbuf.st_blksize;
+        res.blocks = statbuf.st_blocks;
+        res.atime = statbuf.st_atime;
+        res.mtime = statbuf.st_mtime;
+        res.ctime = statbuf.st_ctime;
+
+        fprintf(stderr, "[Server] FSTAT result: mode=%o, size=%u, errno=%d\n",
+                res.mode, res.size, res.err);
+    } else {
+        /* Failure */
+        res.result = -1;
+        res.err = 0;
+        res.dev = 0;
+        res.ino = 0;
+        res.mode = 0;
+        res.nlink = 0;
+        res.uid = 0;
+        res.gid = 0;
+        res.rdev = 0;
+        res.size = 0;
+        res.blksize = 0;
+        res.blocks = 0;
+        res.atime = 0;
+        res.mtime = 0;
+        res.ctime = 0;
+
+        fprintf(stderr, "[Server] FSTAT failed: errno=%d\n", res.err);
+    }
+
+    return &res;
+}
+
+/*
+ * SYSCALL_FCNTL implementation
+ */
+fcntl_response *
+syscall_fcntl_1_svc(fcntl_request *req, struct svc_req *rqstp) {
+    static fcntl_response res;
+
+    fprintf(stderr, "[Server] FCNTL: client_fd=%d, cmd=%d\n", req->fd, req->cmd);
+
+    /* Initialize response */
+    memset(&res, 0, sizeof(res));
+    res.arg_out.type = FCNTL_ARG_NONE;
+
+    /* Translate client FD to server FD */
+    int server_fd = translate_fd(req->fd);
+
+    if (server_fd < 0) {
+        /* Invalid FD */
+        res.result = -1;
+        res.err = EBADF;
+        fprintf(stderr, "[Server] FCNTL failed: invalid client_fd=%d\n", req->fd);
+        return &res;
+    }
+
+    /* Prepare argument based on union type */
+    int int_arg = 0;
+    struct flock flock_arg;
+    void *arg_ptr = NULL;
+
+    switch(req->arg.type) {
+        case FCNTL_ARG_NONE:
+            arg_ptr = NULL;
+            break;
+
+        case FCNTL_ARG_INT:
+            int_arg = req->arg.fcntl_arg_u.int_arg;
+            arg_ptr = (void *)(long)int_arg;
+            break;
+
+        case FCNTL_ARG_FLOCK:
+            /* Convert XDR flock_data to native struct flock */
+            memset(&flock_arg, 0, sizeof(flock_arg));
+            flock_arg.l_type = req->arg.fcntl_arg_u.flock_arg.l_type;
+            flock_arg.l_whence = req->arg.fcntl_arg_u.flock_arg.l_whence;
+            flock_arg.l_start = (off_t)req->arg.fcntl_arg_u.flock_arg.l_start;
+            flock_arg.l_len = (off_t)req->arg.fcntl_arg_u.flock_arg.l_len;
+            flock_arg.l_pid = req->arg.fcntl_arg_u.flock_arg.l_pid;
+            arg_ptr = &flock_arg;
+            break;
+    }
+
+    /* Execute the fcntl syscall */
+    int result;
+    if (req->arg.type == FCNTL_ARG_NONE) {
+        result = fcntl(server_fd, req->cmd);
+    } else if (req->arg.type == FCNTL_ARG_INT) {
+        result = fcntl(server_fd, req->cmd, int_arg);
+    } else {
+        result = fcntl(server_fd, req->cmd, arg_ptr);
+    }
+
+    int saved_errno = errno;
+
+    /* Handle success */
+    if (result >= 0) {
+        /* Special handling for F_DUPFD and F_DUPFD_CLOEXEC */
+        if (req->cmd == F_DUPFD || req->cmd == F_DUPFD_CLOEXEC) {
+            /* result is a new server FD, we need to create a client FD mapping */
+            /* Use the minimum FD from the int_arg */
+            int new_client_fd = add_fd_mapping_from(result, int_arg);
+            if (new_client_fd < 0) {
+                /* Mapping failed */
+                close(result);
+                res.result = -1;
+                res.err = ENFILE;
+                fprintf(stderr, "[Server] FCNTL F_DUPFD failed: FD mapping table full\n");
+                return &res;
+            }
+            res.result = new_client_fd;
+            res.err = 0;
+        } else {
+            res.result = result;
+            res.err = 0;
+
+            /* Special handling for F_GETLK - copy modified flock back */
+            if (req->cmd == F_GETLK && req->arg.type == FCNTL_ARG_FLOCK) {
+                res.arg_out.type = FCNTL_ARG_FLOCK;
+                res.arg_out.fcntl_arg_u.flock_arg.l_type = flock_arg.l_type;
+                res.arg_out.fcntl_arg_u.flock_arg.l_whence = flock_arg.l_whence;
+                res.arg_out.fcntl_arg_u.flock_arg.l_start = flock_arg.l_start;
+                res.arg_out.fcntl_arg_u.flock_arg.l_len = flock_arg.l_len;
+                res.arg_out.fcntl_arg_u.flock_arg.l_pid = flock_arg.l_pid;
+            }
+        }
+    } else {
+        /* Error */
+        res.result = -1;
+        res.err = saved_errno;
+    }
+
+    fprintf(stderr, "[Server] FCNTL result: %d, errno=%d\n", res.result, res.err);
 
     return &res;
 }
@@ -384,4 +776,35 @@ int main(int argc, char *argv[]) {
 
     fprintf(stderr, "[Server] svc_run returned (should never happen)\n");
     exit(1);
+}
+
+/*
+ * SYSCALL_FDATASYNC implementation
+ */
+fdatasync_response *
+syscall_fdatasync_1_svc(fdatasync_request *req, struct svc_req *rqstp) {
+    static fdatasync_response res;
+
+    fprintf(stderr, "[Server] FDATASYNC: client_fd=%d\n",
+            req->fd);
+
+    /* Translate client FD to server FD */
+    int server_fd = translate_fd(req->fd);
+
+    if (server_fd < 0) {
+        /* Invalid FD */
+        res.result = -1;
+        res.err = EBADF;
+        fprintf(stderr, "[Server] WRITE FDATASYNC: invalid client_fd=%d\n", req->fd);
+    } else {
+        /* Execute the actual write syscall */
+        ssize_t bytes_written = fdatasync(server_fd);
+        res.result = bytes_written;
+        res.err = errno;
+
+        fprintf(stderr, "[Server] FDATASYNC result: %zd, errno=%d\n",
+                res.result, res.err);
+    }
+
+    return &res;
 }

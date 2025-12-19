@@ -30,6 +30,21 @@ struct open_response {
 };
 typedef struct open_response open_response;
 
+struct openat_request {
+	int dirfd;
+	char *path;
+	int flags;
+	u_int mode;
+};
+typedef struct openat_request openat_request;
+
+struct openat_response {
+	int fd;
+	int result;
+	int err;
+};
+typedef struct openat_response openat_response;
+
 struct close_request {
 	int fd;
 };
@@ -57,6 +72,23 @@ struct read_response {
 };
 typedef struct read_response read_response;
 
+struct pread_request {
+	int fd;
+	long offset;
+	u_int count;
+};
+typedef struct pread_request pread_request;
+
+struct pread_response {
+	struct {
+		u_int data_len;
+		char *data_val;
+	} data;
+	int result;
+	int err;
+};
+typedef struct pread_response pread_response;
+
 struct write_request {
 	int fd;
 	struct {
@@ -72,6 +104,22 @@ struct write_response {
 };
 typedef struct write_response write_response;
 
+struct pwrite_request {
+	int fd;
+	long offset;
+	struct {
+		u_int data_len;
+		char *data_val;
+	} data;
+};
+typedef struct pwrite_request pwrite_request;
+
+struct pwrite_response {
+	int result;
+	int err;
+};
+typedef struct pwrite_response pwrite_response;
+
 struct stat_request {
 	char *path;
 };
@@ -80,13 +128,121 @@ typedef struct stat_request stat_request;
 struct stat_response {
 	int result;
 	int err;
+	u_long dev;
+	u_long ino;
 	u_int mode;
-	u_int size;
-	u_int atime;
-	u_int mtime;
-	u_int ctime;
+	u_int nlink;
+	u_int uid;
+	u_int gid;
+	u_long rdev;
+	u_quad_t size;
+	u_long blksize;
+	u_quad_t blocks;
+	u_long atime;
+	u_long mtime;
+	u_long ctime;
 };
 typedef struct stat_response stat_response;
+
+struct newfstatat_request {
+	int dirfd;
+	char *path;
+	int flags;
+};
+typedef struct newfstatat_request newfstatat_request;
+
+struct newfstatat_response {
+	int result;
+	int err;
+	u_long dev;
+	u_long ino;
+	u_int mode;
+	u_int nlink;
+	u_int uid;
+	u_int gid;
+	u_long rdev;
+	u_quad_t size;
+	u_long blksize;
+	u_quad_t blocks;
+	u_long atime;
+	u_long mtime;
+	u_long ctime;
+};
+typedef struct newfstatat_response newfstatat_response;
+
+struct fstat_request {
+	int fd;
+};
+typedef struct fstat_request fstat_request;
+
+struct fstat_response {
+	int result;
+	int err;
+	u_long dev;
+	u_long ino;
+	u_int mode;
+	u_int nlink;
+	u_int uid;
+	u_int gid;
+	u_long rdev;
+	u_quad_t size;
+	u_long blksize;
+	u_quad_t blocks;
+	u_long atime;
+	u_long mtime;
+	u_long ctime;
+};
+typedef struct fstat_response fstat_response;
+
+struct flock_data {
+	short l_type;
+	short l_whence;
+	quad_t l_start;
+	quad_t l_len;
+	int l_pid;
+};
+typedef struct flock_data flock_data;
+
+enum fcntl_arg_type {
+	FCNTL_ARG_NONE = 0,
+	FCNTL_ARG_INT = 1,
+	FCNTL_ARG_FLOCK = 2,
+};
+typedef enum fcntl_arg_type fcntl_arg_type;
+
+struct fcntl_arg {
+	fcntl_arg_type type;
+	union {
+		int int_arg;
+		flock_data flock_arg;
+	} fcntl_arg_u;
+};
+typedef struct fcntl_arg fcntl_arg;
+
+struct fcntl_request {
+	int fd;
+	int cmd;
+	fcntl_arg arg;
+};
+typedef struct fcntl_request fcntl_request;
+
+struct fcntl_response {
+	int result;
+	int err;
+	fcntl_arg arg_out;
+};
+typedef struct fcntl_response fcntl_response;
+
+struct fdatasync_request {
+	int fd;
+};
+typedef struct fdatasync_request fdatasync_request;
+
+struct fdatasync_response {
+	int result;
+	int err;
+};
+typedef struct fdatasync_response fdatasync_response;
 
 #define SYSCALL_PROG 0x20000001
 #define SYSCALL_VERS 1
@@ -95,36 +251,78 @@ typedef struct stat_response stat_response;
 #define SYSCALL_OPEN 1
 extern  open_response * syscall_open_1(open_request *, CLIENT *);
 extern  open_response * syscall_open_1_svc(open_request *, struct svc_req *);
-#define SYSCALL_CLOSE 2
+#define SYSCALL_OPENAT 2
+extern  openat_response * syscall_openat_1(openat_request *, CLIENT *);
+extern  openat_response * syscall_openat_1_svc(openat_request *, struct svc_req *);
+#define SYSCALL_CLOSE 3
 extern  close_response * syscall_close_1(close_request *, CLIENT *);
 extern  close_response * syscall_close_1_svc(close_request *, struct svc_req *);
-#define SYSCALL_READ 3
+#define SYSCALL_READ 4
 extern  read_response * syscall_read_1(read_request *, CLIENT *);
 extern  read_response * syscall_read_1_svc(read_request *, struct svc_req *);
-#define SYSCALL_WRITE 4
+#define SYSCALL_PREAD 5
+extern  pread_response * syscall_pread_1(pread_request *, CLIENT *);
+extern  pread_response * syscall_pread_1_svc(pread_request *, struct svc_req *);
+#define SYSCALL_WRITE 6
 extern  write_response * syscall_write_1(write_request *, CLIENT *);
 extern  write_response * syscall_write_1_svc(write_request *, struct svc_req *);
-#define SYSCALL_STAT 5
+#define SYSCALL_PWRITE 7
+extern  pwrite_response * syscall_pwrite_1(pwrite_request *, CLIENT *);
+extern  pwrite_response * syscall_pwrite_1_svc(pwrite_request *, struct svc_req *);
+#define SYSCALL_STAT 8
 extern  stat_response * syscall_stat_1(stat_request *, CLIENT *);
 extern  stat_response * syscall_stat_1_svc(stat_request *, struct svc_req *);
+#define SYSCALL_NEWFSTATAT 9
+extern  newfstatat_response * syscall_newfstatat_1(newfstatat_request *, CLIENT *);
+extern  newfstatat_response * syscall_newfstatat_1_svc(newfstatat_request *, struct svc_req *);
+#define SYSCALL_FSTAT 10
+extern  fstat_response * syscall_fstat_1(fstat_request *, CLIENT *);
+extern  fstat_response * syscall_fstat_1_svc(fstat_request *, struct svc_req *);
+#define SYSCALL_FCNTL 11
+extern  fcntl_response * syscall_fcntl_1(fcntl_request *, CLIENT *);
+extern  fcntl_response * syscall_fcntl_1_svc(fcntl_request *, struct svc_req *);
+#define SYSCALL_FDATASYNC 12
+extern  fdatasync_response * syscall_fdatasync_1(fdatasync_request *, CLIENT *);
+extern  fdatasync_response * syscall_fdatasync_1_svc(fdatasync_request *, struct svc_req *);
 extern int syscall_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
 #define SYSCALL_OPEN 1
 extern  open_response * syscall_open_1();
 extern  open_response * syscall_open_1_svc();
-#define SYSCALL_CLOSE 2
+#define SYSCALL_OPENAT 2
+extern  openat_response * syscall_openat_1();
+extern  openat_response * syscall_openat_1_svc();
+#define SYSCALL_CLOSE 3
 extern  close_response * syscall_close_1();
 extern  close_response * syscall_close_1_svc();
-#define SYSCALL_READ 3
+#define SYSCALL_READ 4
 extern  read_response * syscall_read_1();
 extern  read_response * syscall_read_1_svc();
-#define SYSCALL_WRITE 4
+#define SYSCALL_PREAD 5
+extern  pread_response * syscall_pread_1();
+extern  pread_response * syscall_pread_1_svc();
+#define SYSCALL_WRITE 6
 extern  write_response * syscall_write_1();
 extern  write_response * syscall_write_1_svc();
-#define SYSCALL_STAT 5
+#define SYSCALL_PWRITE 7
+extern  pwrite_response * syscall_pwrite_1();
+extern  pwrite_response * syscall_pwrite_1_svc();
+#define SYSCALL_STAT 8
 extern  stat_response * syscall_stat_1();
 extern  stat_response * syscall_stat_1_svc();
+#define SYSCALL_NEWFSTATAT 9
+extern  newfstatat_response * syscall_newfstatat_1();
+extern  newfstatat_response * syscall_newfstatat_1_svc();
+#define SYSCALL_FSTAT 10
+extern  fstat_response * syscall_fstat_1();
+extern  fstat_response * syscall_fstat_1_svc();
+#define SYSCALL_FCNTL 11
+extern  fcntl_response * syscall_fcntl_1();
+extern  fcntl_response * syscall_fcntl_1_svc();
+#define SYSCALL_FDATASYNC 12
+extern  fdatasync_response * syscall_fdatasync_1();
+extern  fdatasync_response * syscall_fdatasync_1_svc();
 extern int syscall_prog_1_freeresult ();
 #endif /* K&R C */
 
@@ -133,26 +331,60 @@ extern int syscall_prog_1_freeresult ();
 #if defined(__STDC__) || defined(__cplusplus)
 extern  bool_t xdr_open_request (XDR *, open_request*);
 extern  bool_t xdr_open_response (XDR *, open_response*);
+extern  bool_t xdr_openat_request (XDR *, openat_request*);
+extern  bool_t xdr_openat_response (XDR *, openat_response*);
 extern  bool_t xdr_close_request (XDR *, close_request*);
 extern  bool_t xdr_close_response (XDR *, close_response*);
 extern  bool_t xdr_read_request (XDR *, read_request*);
 extern  bool_t xdr_read_response (XDR *, read_response*);
+extern  bool_t xdr_pread_request (XDR *, pread_request*);
+extern  bool_t xdr_pread_response (XDR *, pread_response*);
 extern  bool_t xdr_write_request (XDR *, write_request*);
 extern  bool_t xdr_write_response (XDR *, write_response*);
+extern  bool_t xdr_pwrite_request (XDR *, pwrite_request*);
+extern  bool_t xdr_pwrite_response (XDR *, pwrite_response*);
 extern  bool_t xdr_stat_request (XDR *, stat_request*);
 extern  bool_t xdr_stat_response (XDR *, stat_response*);
+extern  bool_t xdr_newfstatat_request (XDR *, newfstatat_request*);
+extern  bool_t xdr_newfstatat_response (XDR *, newfstatat_response*);
+extern  bool_t xdr_fstat_request (XDR *, fstat_request*);
+extern  bool_t xdr_fstat_response (XDR *, fstat_response*);
+extern  bool_t xdr_flock_data (XDR *, flock_data*);
+extern  bool_t xdr_fcntl_arg_type (XDR *, fcntl_arg_type*);
+extern  bool_t xdr_fcntl_arg (XDR *, fcntl_arg*);
+extern  bool_t xdr_fcntl_request (XDR *, fcntl_request*);
+extern  bool_t xdr_fcntl_response (XDR *, fcntl_response*);
+extern  bool_t xdr_fdatasync_request (XDR *, fdatasync_request*);
+extern  bool_t xdr_fdatasync_response (XDR *, fdatasync_response*);
 
 #else /* K&R C */
 extern bool_t xdr_open_request ();
 extern bool_t xdr_open_response ();
+extern bool_t xdr_openat_request ();
+extern bool_t xdr_openat_response ();
 extern bool_t xdr_close_request ();
 extern bool_t xdr_close_response ();
 extern bool_t xdr_read_request ();
 extern bool_t xdr_read_response ();
+extern bool_t xdr_pread_request ();
+extern bool_t xdr_pread_response ();
 extern bool_t xdr_write_request ();
 extern bool_t xdr_write_response ();
+extern bool_t xdr_pwrite_request ();
+extern bool_t xdr_pwrite_response ();
 extern bool_t xdr_stat_request ();
 extern bool_t xdr_stat_response ();
+extern bool_t xdr_newfstatat_request ();
+extern bool_t xdr_newfstatat_response ();
+extern bool_t xdr_fstat_request ();
+extern bool_t xdr_fstat_response ();
+extern bool_t xdr_flock_data ();
+extern bool_t xdr_fcntl_arg_type ();
+extern bool_t xdr_fcntl_arg ();
+extern bool_t xdr_fcntl_request ();
+extern bool_t xdr_fcntl_response ();
+extern bool_t xdr_fdatasync_request ();
+extern bool_t xdr_fdatasync_response ();
 
 #endif /* K&R C */
 

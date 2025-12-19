@@ -21,10 +21,17 @@ syscall_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
 		open_request syscall_open_1_arg;
+		openat_request syscall_openat_1_arg;
 		close_request syscall_close_1_arg;
 		read_request syscall_read_1_arg;
+		pread_request syscall_pread_1_arg;
 		write_request syscall_write_1_arg;
+		pwrite_request syscall_pwrite_1_arg;
 		stat_request syscall_stat_1_arg;
+		newfstatat_request syscall_newfstatat_1_arg;
+		fstat_request syscall_fstat_1_arg;
+		fcntl_request syscall_fcntl_1_arg;
+		fdatasync_request syscall_fdatasync_1_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -41,6 +48,12 @@ syscall_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		local = (char *(*)(char *, struct svc_req *)) syscall_open_1_svc;
 		break;
 
+	case SYSCALL_OPENAT:
+		_xdr_argument = (xdrproc_t) xdr_openat_request;
+		_xdr_result = (xdrproc_t) xdr_openat_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_openat_1_svc;
+		break;
+
 	case SYSCALL_CLOSE:
 		_xdr_argument = (xdrproc_t) xdr_close_request;
 		_xdr_result = (xdrproc_t) xdr_close_response;
@@ -53,16 +66,52 @@ syscall_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		local = (char *(*)(char *, struct svc_req *)) syscall_read_1_svc;
 		break;
 
+	case SYSCALL_PREAD:
+		_xdr_argument = (xdrproc_t) xdr_pread_request;
+		_xdr_result = (xdrproc_t) xdr_pread_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_pread_1_svc;
+		break;
+
 	case SYSCALL_WRITE:
 		_xdr_argument = (xdrproc_t) xdr_write_request;
 		_xdr_result = (xdrproc_t) xdr_write_response;
 		local = (char *(*)(char *, struct svc_req *)) syscall_write_1_svc;
 		break;
 
+	case SYSCALL_PWRITE:
+		_xdr_argument = (xdrproc_t) xdr_pwrite_request;
+		_xdr_result = (xdrproc_t) xdr_pwrite_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_pwrite_1_svc;
+		break;
+
 	case SYSCALL_STAT:
 		_xdr_argument = (xdrproc_t) xdr_stat_request;
 		_xdr_result = (xdrproc_t) xdr_stat_response;
 		local = (char *(*)(char *, struct svc_req *)) syscall_stat_1_svc;
+		break;
+
+	case SYSCALL_NEWFSTATAT:
+		_xdr_argument = (xdrproc_t) xdr_newfstatat_request;
+		_xdr_result = (xdrproc_t) xdr_newfstatat_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_newfstatat_1_svc;
+		break;
+
+	case SYSCALL_FSTAT:
+		_xdr_argument = (xdrproc_t) xdr_fstat_request;
+		_xdr_result = (xdrproc_t) xdr_fstat_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_fstat_1_svc;
+		break;
+
+	case SYSCALL_FCNTL:
+		_xdr_argument = (xdrproc_t) xdr_fcntl_request;
+		_xdr_result = (xdrproc_t) xdr_fcntl_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_fcntl_1_svc;
+		break;
+
+	case SYSCALL_FDATASYNC:
+		_xdr_argument = (xdrproc_t) xdr_fdatasync_request;
+		_xdr_result = (xdrproc_t) xdr_fdatasync_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_fdatasync_1_svc;
 		break;
 
 	default:

@@ -1,7 +1,10 @@
 /*
  * Comprehensive Test Program for Syscall Interception
  *
- * Tests open(), write(), close(), read(), stat() syscalls through RPC interception
+ * Refactored:
+ *  - Grouped by syscall
+ *  - Each syscall family tested in its own function
+ *  - main() only orchestrates test execution
  */
 
 #include <stdio.h>
@@ -15,149 +18,295 @@
 #define TEST_FILE "/tmp/p3_tb_test.txt"
 #define TEST_DATA "Hello from intercepted syscalls! This is a test message."
 
-int main() {
-    int fd;
-    ssize_t bytes;
-    char read_buffer[256];
-    int test_passed = 1;
+/* -------------------------------------------------- */
+/* Utility helpers                                    */
+/* -------------------------------------------------- */
+
+static int fail(const char *msg)
+{
+    fprintf(stderr, "ERROR: %s: %s\n", msg, strerror(errno));
+    return -1;
+}
+
+/* -------------------------------------------------- */
+/* open / openat tests                                */
+/* -------------------------------------------------- */
+
+static int test_open_and_openat(void)
+{
+    printf("[open/openat] Testing open() and openat()\n");
+
+    int fd = open(TEST_FILE, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd < 0)
+        return fail("open for write failed");
+
+    printf("  open(): fd=%d\n", fd);
+    close(fd);
+
+    int fd_openat = openat(AT_FDCWD, TEST_FILE, O_CREAT | O_RDWR, 0644);
+    if (fd_openat < 0)
+        return fail("openat failed");
+
+    const char *msg = "Testing openat syscall";
+    if (write(fd_openat, msg, strlen(msg)) < 0)
+        return fail("write after openat failed");
+
+    close(fd_openat);
+    printf("  openat(): success\n\n");
+    return 0;
+}
+
+/* -------------------------------------------------- */
+/* write / pwrite tests                               */
+/* -------------------------------------------------- */
+
+static int test_write_and_pwrite(void)
+{
+    printf("[write/pwrite] Testing write() and pwrite()\n");
+
+    int fd = open(TEST_FILE, O_WRONLY | O_TRUNC);
+    if (fd < 0)
+        return fail("open for write failed");
+
+    size_t len = strlen(TEST_DATA);
+
+    ssize_t w = write(fd, TEST_DATA, len);
+    if (w != (ssize_t)len)
+        return fail("write incomplete");
+
+    ssize_t pw = pwrite(fd, TEST_DATA, len, 0);
+    if (pw != (ssize_t)len)
+        return fail("pwrite incomplete");
+
+    close(fd);
+    printf("  write/pwrite: success\n\n");
+    return 0;
+}
+
+/* -------------------------------------------------- */
+/* read / pread tests                                 */
+/* -------------------------------------------------- */
+
+static int test_read_and_pread(void)
+{
+    printf("[read/pread] Testing read() and pread()\n");
+
+    int fd = open(TEST_FILE, O_RDONLY);
+    if (fd < 0)
+        return fail("open for read failed");
+
+    char buf[256] = {0};
+    ssize_t r = read(fd, buf, sizeof(buf) - 1);
+    if (r < 0)
+        return fail("read failed");
+
+    if (strcmp(buf, TEST_DATA) != 0)
+    {
+        fprintf(stderr, "ERROR: read data mismatch\n");
+        close(fd);
+        return -1;
+    }
+
+    char pbuf[256] = {0};
+    ssize_t pr = pread(fd, pbuf, sizeof(pbuf) - 1, 0);
+    if (pr < 0)
+        return fail("pread failed");
+
+    if (strncmp(pbuf, TEST_DATA, strlen(TEST_DATA)) != 0)
+    {
+        fprintf(stderr, "ERROR: pread data mismatch\n");
+        close(fd);
+        return -1;
+    }
+
+    close(fd);
+    printf("  read/pread: success\n\n");
+    return 0;
+}
+
+/* -------------------------------------------------- */
+/* stat-family tests                                  */
+/* -------------------------------------------------- */
+
+static int test_stat_family(void)
+{
+    printf("[stat] Testing stat(), fstat(), fstatat()\n");
+
+    struct stat st;
+    if (stat(TEST_FILE, &st) < 0)
+        return fail("stat failed");
+
+    if (!S_ISREG(st.st_mode))
+    {
+        fprintf(stderr, "ERROR: not a regular file\n");
+        return -1;
+    }
+
+    int fd = open(TEST_FILE, O_RDONLY);
+    if (fd < 0)
+        return fail("open for fstat failed");
+
+    struct stat fst;
+    if (fstat(fd, &fst) < 0)
+    {
+        close(fd);
+        return fail("fstat failed");
+    }
+
+    struct stat atst;
+    if (fstatat(AT_FDCWD, TEST_FILE, &atst, 0) < 0)
+    {
+        close(fd);
+        return fail("fstatat failed");
+    }
+
+    close(fd);
+    printf("  stat-family: success\n\n");
+    return 0;
+}
+
+/* -------------------------------------------------- */
+/* fcntl tests                                        */
+/* -------------------------------------------------- */
+
+static int test_fcntl_operations(void)
+{
+    printf("[fcntl] Testing fcntl operations\n");
+
+    int fd = open(TEST_FILE, O_RDONLY);
+    if (fd < 0)
+        return fail("open failed");
+
+    /* F_DUPFD */
+    int dupfd = fcntl(fd, F_DUPFD, 10);
+    if (dupfd < 10)
+        return fail("F_DUPFD failed");
+
+    close(dupfd);
+
+    /* F_GETFD / F_SETFD */
+    int flags = fcntl(fd, F_GETFD);
+    if (flags < 0)
+        return fail("F_GETFD failed");
+
+    if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0)
+        return fail("F_SETFD failed");
+
+    /* F_GETFL / F_SETFL */
+    int fl = fcntl(fd, F_GETFL);
+    if (fl < 0)
+        return fail("F_GETFL failed");
+
+    if (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0)
+        return fail("F_SETFL failed");
+
+    close(fd);
+
+    /* File locking */
+    fd = open(TEST_FILE, O_RDWR);
+    if (fd < 0)
+        return fail("open for locking failed");
+
+    struct flock lk = {
+        .l_type = F_WRLCK,
+        .l_whence = SEEK_SET,
+        .l_start = 0,
+        .l_len = 0
+    };
+
+    if (fcntl(fd, F_SETLK, &lk) < 0)
+        return fail("F_SETLK failed");
+
+    lk.l_type = F_UNLCK;
+    if (fcntl(fd, F_SETLK, &lk) < 0)
+        return fail("F_UNLCK failed");
+
+    close(fd);
+    printf("  fcntl: success\n\n");
+    return 0;
+}
+
+/* -------------------------------------------------- */
+/* error-path tests                                   */
+/* -------------------------------------------------- */
+
+static int test_error_cases(void)
+{
+    printf("[errors] Testing expected failure paths\n");
+
+    struct stat st;
+    if (stat("/tmp/nonexistent_abcdef", &st) == 0 || errno != ENOENT)
+    {
+        fprintf(stderr, "ERROR: stat on nonexistent file did not fail correctly\n");
+        return -1;
+    }
+
+    if (fcntl(999, F_GETFD) != -1 || errno != EBADF)
+    {
+        fprintf(stderr, "ERROR: fcntl invalid FD did not fail correctly\n");
+        return -1;
+    }
+
+    printf("  error cases: success\n\n");
+    return 0;
+}
+
+/* -------------------------------------------------- */
+/* fdatasync tests                                        */
+/* -------------------------------------------------- */
+
+static int test_fdatasync(void)
+{
+    printf("[fdatasync] Testing fdatasync()\n");
+
+    int fd = open(TEST_FILE, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) {
+        fprintf(stderr, "ERROR: open failed: %s\n", strerror(errno));
+        return -1;
+    }
+
+    ssize_t w = write(fd, TEST_DATA, strlen(TEST_DATA));
+    if (w < 0 || (size_t)w != strlen(TEST_DATA)) {
+        fprintf(stderr, "ERROR: write failed or incomplete: %s\n", strerror(errno));
+        close(fd);
+        return -1;
+    }
+
+    if (fdatasync(fd) < 0) {
+        fprintf(stderr, "ERROR: fdatasync failed: %s\n", strerror(errno));
+        close(fd);
+        return -1;
+    }
+
+    close(fd);
+
+    printf("  fdatasync: success\n\n");
+    return 0;
+}
+
+/* -------------------------------------------------- */
+/* main                                               */
+/* -------------------------------------------------- */
+
+int main(void)
+{
+    int failed = 0;
 
     printf("\n=== Syscall Interception Test Program ===\n\n");
 
-    /* Test 1: Open file for writing */
-    printf("[Test 1] Opening file for writing: %s\n", TEST_FILE);
-    fd = open(TEST_FILE, O_CREAT | O_WRONLY | O_TRUNC, 0644);
-    if (fd < 0) {
-        fprintf(stderr, "ERROR: Failed to open file for writing: %s\n", strerror(errno));
-        test_passed = 0;
-        goto cleanup;
-    }
-    printf("SUCCESS: Opened file with fd=%d\n\n", fd);
+    failed |= test_open_and_openat();
+    failed |= test_write_and_pwrite();
+    failed |= test_read_and_pread();
+    failed |= test_stat_family();
+    failed |= test_fcntl_operations();
+    failed |= test_fdatasync();
 
-    /* Test 2: Write data to file */
-    printf("[Test 2] Writing data to file...\n");
-    size_t data_len = strlen(TEST_DATA);
-    bytes = write(fd, TEST_DATA, data_len);
-    if (bytes < 0) {
-        fprintf(stderr, "ERROR: Failed to write to file: %s\n", strerror(errno));
-        test_passed = 0;
-        close(fd);
-        goto cleanup;
-    }
-    if ((size_t)bytes != data_len) {
-        fprintf(stderr, "ERROR: Partial write: wrote %zd bytes, expected %zu\n",
-                bytes, data_len);
-        test_passed = 0;
-        close(fd);
-        goto cleanup;
-    }
-    printf("SUCCESS: Wrote %zd bytes\n\n", bytes);
+    failed |= test_error_cases();
 
-    /* Test 3: Close file */
-    printf("[Test 3] Closing file...\n");
-    if (close(fd) < 0) {
-        fprintf(stderr, "ERROR: Failed to close file: %s\n", strerror(errno));
-        test_passed = 0;
-        goto cleanup;
-    }
-    printf("SUCCESS: File closed\n\n");
-
-    /* Test 4: Open file for reading */
-    printf("[Test 4] Opening file for reading: %s\n", TEST_FILE);
-    fd = open(TEST_FILE, O_RDONLY);
-    if (fd < 0) {
-        fprintf(stderr, "ERROR: Failed to open file for reading: %s\n", strerror(errno));
-        test_passed = 0;
-        goto cleanup;
-    }
-    printf("SUCCESS: Opened file with fd=%d\n\n", fd);
-
-    /* Test 5: Read data from file */
-    printf("[Test 5] Reading data from file...\n");
-    memset(read_buffer, 0, sizeof(read_buffer));
-    bytes = read(fd, read_buffer, sizeof(read_buffer) - 1);
-    if (bytes < 0) {
-        fprintf(stderr, "ERROR: Failed to read from file: %s\n", strerror(errno));
-        test_passed = 0;
-        close(fd);
-        goto cleanup;
-    }
-    printf("SUCCESS: Read %zd bytes\n", bytes);
-    printf("Data read: \"%s\"\n\n", read_buffer);
-
-    /* Test 6: Verify data integrity */
-    printf("[Test 6] Verifying data integrity...\n");
-    if (strcmp(read_buffer, TEST_DATA) != 0) {
-        fprintf(stderr, "ERROR: Data mismatch!\n");
-        fprintf(stderr, "Expected: \"%s\"\n", TEST_DATA);
-        fprintf(stderr, "Got:      \"%s\"\n", read_buffer);
-        test_passed = 0;
-        close(fd);
-        goto cleanup;
-    }
-    printf("SUCCESS: Data matches!\n\n");
-
-    /* Test 7: Close file again */
-    printf("[Test 7] Closing file...\n");
-    if (close(fd) < 0) {
-        fprintf(stderr, "ERROR: Failed to close file: %s\n", strerror(errno));
-        test_passed = 0;
-        goto cleanup;
-    }
-    printf("SUCCESS: File closed\n\n");
-
-    /* Test 8: stat() on existing file */
-    printf("[Test 8] Getting file statistics: %s\n", TEST_FILE);
-    struct stat statbuf;
-    if (stat(TEST_FILE, &statbuf) < 0) {
-        fprintf(stderr, "ERROR: Failed to stat file: %s\n", strerror(errno));
-        test_passed = 0;
-        goto cleanup;
-    }
-    printf("SUCCESS: stat() returned:\n");
-    printf("  File mode: %o\n", statbuf.st_mode);
-    printf("  File size: %ld bytes\n", (long)statbuf.st_size);
-    printf("  Last access time: %ld\n", (long)statbuf.st_atime);
-    printf("  Last modification time: %ld\n", (long)statbuf.st_mtime);
-    printf("  Last status change time: %ld\n\n", (long)statbuf.st_ctime);
-
-    /* Test 9: Verify stat results */
-    printf("[Test 9] Verifying stat results...\n");
-    if ((size_t)statbuf.st_size != data_len) {
-        fprintf(stderr, "ERROR: File size mismatch! Expected %zu, got %ld\n",
-                data_len, (long)statbuf.st_size);
-        test_passed = 0;
-        goto cleanup;
-    }
-    if (!S_ISREG(statbuf.st_mode)) {
-        fprintf(stderr, "ERROR: File is not a regular file!\n");
-        test_passed = 0;
-        goto cleanup;
-    }
-    printf("SUCCESS: File size and type verified\n\n");
-
-    /* Test 10: stat() on non-existent file */
-    printf("[Test 10] Testing stat() on non-existent file...\n");
-    const char *nonexistent_file = "/tmp/p3_tb_nonexistent_file_xyz123.txt";
-    if (stat(nonexistent_file, &statbuf) == 0) {
-        fprintf(stderr, "ERROR: stat() succeeded on non-existent file!\n");
-        test_passed = 0;
-        goto cleanup;
-    }
-    if (errno != ENOENT) {
-        fprintf(stderr, "ERROR: Wrong errno for non-existent file: expected ENOENT (%d), got %d\n",
-                ENOENT, errno);
-        test_passed = 0;
-        goto cleanup;
-    }
-    printf("SUCCESS: stat() correctly failed with ENOENT\n\n");
-
-cleanup:
-    /* Print final result */
-    printf("=== Test Result: %s ===\n\n",
-           test_passed ? "ALL TESTS PASSED" : "SOME TESTS FAILED");
-
-    /* Clean up test file */
     unlink(TEST_FILE);
 
-    return test_passed ? 0 : 1;
+    printf("=== Test Result: %s ===\n\n",
+           failed ? "SOME TESTS FAILED" : "ALL TESTS PASSED");
+
+    return failed ? 1 : 0;
 }

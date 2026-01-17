@@ -273,6 +273,118 @@ struct fdatasync_response {
     int err;                /* errno value */
 };
 
+/*
+ * Lseek syscall structures
+ */
+struct lseek_request {
+    int fd;
+    hyper offset;     /* 64-bit offset */
+    int whence;
+};
+
+struct lseek_response {
+    hyper result;     /* New offset (64-bit) or -1 */
+    int err;
+};
+
+/*
+ * Access syscall structures
+ */
+struct access_request {
+    string path<MAX_PATH_LEN>;
+    int mode;
+};
+
+struct access_response {
+    int result;
+    int err;
+};
+
+/*
+ * Unlink syscall structures
+ */
+struct unlink_request {
+    string path<MAX_PATH_LEN>;
+};
+
+struct unlink_response {
+    int result;
+    int err;
+};
+
+/*
+ * Getcwd syscall structures
+ */
+struct getcwd_request {
+    unsigned int size;
+};
+
+struct getcwd_response {
+    string path<MAX_PATH_LEN>;
+    int result;
+    int err;
+};
+
+/*
+ * Prlimit64 syscall structures
+ */
+struct rlimit_data {
+    unsigned hyper rlim_cur;  /* Soft limit */
+    unsigned hyper rlim_max;  /* Hard limit */
+};
+
+struct prlimit64_request {
+    int pid;
+    int resource;
+    bool has_new_limit;
+    rlimit_data new_limit;
+    bool request_old_limit;
+};
+
+struct prlimit64_response {
+    int result;
+    int err;
+    bool has_old_limit;
+    rlimit_data old_limit;
+};
+
+/*
+ * Ioctl syscall structures
+ */
+struct winsize_data {
+    unsigned short ws_row;
+    unsigned short ws_col;
+    unsigned short ws_xpixel;
+    unsigned short ws_ypixel;
+};
+
+enum ioctl_arg_type {
+    IOCTL_ARG_NONE = 0,
+    IOCTL_ARG_INT = 1,
+    IOCTL_ARG_WINSIZE = 2
+};
+
+union ioctl_arg switch (ioctl_arg_type type) {
+    case IOCTL_ARG_NONE:
+        void;
+    case IOCTL_ARG_INT:
+        int int_arg;
+    case IOCTL_ARG_WINSIZE:
+        winsize_data winsize_arg;
+};
+
+struct ioctl_request {
+    int fd;
+    unsigned long request;
+    ioctl_arg arg_in;
+};
+
+struct ioctl_response {
+    int result;
+    int err;
+    ioctl_arg arg_out;
+};
+
 
 /*
  * RPC Program Definition
@@ -291,5 +403,11 @@ program SYSCALL_PROG {
         fstat_response SYSCALL_FSTAT(fstat_request) = 10;
         fcntl_response SYSCALL_FCNTL(fcntl_request) = 11;
         fdatasync_response SYSCALL_FDATASYNC(fdatasync_request) = 12;
+        lseek_response SYSCALL_LSEEK(lseek_request) = 13;
+        access_response SYSCALL_ACCESS(access_request) = 14;
+        unlink_response SYSCALL_UNLINK(unlink_request) = 15;
+        getcwd_response SYSCALL_GETCWD(getcwd_request) = 16;
+        prlimit64_response SYSCALL_PRLIMIT64(prlimit64_request) = 17;
+        ioctl_response SYSCALL_IOCTL(ioctl_request) = 18;
     } = 1;  /* Version 1 */
 } = 0x20000001;  /* Program number */

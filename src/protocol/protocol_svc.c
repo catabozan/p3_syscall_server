@@ -32,6 +32,12 @@ syscall_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		fstat_request syscall_fstat_1_arg;
 		fcntl_request syscall_fcntl_1_arg;
 		fdatasync_request syscall_fdatasync_1_arg;
+		lseek_request syscall_lseek_1_arg;
+		access_request syscall_access_1_arg;
+		unlink_request syscall_unlink_1_arg;
+		getcwd_request syscall_getcwd_1_arg;
+		prlimit64_request syscall_prlimit64_1_arg;
+		ioctl_request syscall_ioctl_1_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -112,6 +118,42 @@ syscall_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		_xdr_argument = (xdrproc_t) xdr_fdatasync_request;
 		_xdr_result = (xdrproc_t) xdr_fdatasync_response;
 		local = (char *(*)(char *, struct svc_req *)) syscall_fdatasync_1_svc;
+		break;
+
+	case SYSCALL_LSEEK:
+		_xdr_argument = (xdrproc_t) xdr_lseek_request;
+		_xdr_result = (xdrproc_t) xdr_lseek_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_lseek_1_svc;
+		break;
+
+	case SYSCALL_ACCESS:
+		_xdr_argument = (xdrproc_t) xdr_access_request;
+		_xdr_result = (xdrproc_t) xdr_access_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_access_1_svc;
+		break;
+
+	case SYSCALL_UNLINK:
+		_xdr_argument = (xdrproc_t) xdr_unlink_request;
+		_xdr_result = (xdrproc_t) xdr_unlink_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_unlink_1_svc;
+		break;
+
+	case SYSCALL_GETCWD:
+		_xdr_argument = (xdrproc_t) xdr_getcwd_request;
+		_xdr_result = (xdrproc_t) xdr_getcwd_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_getcwd_1_svc;
+		break;
+
+	case SYSCALL_PRLIMIT64:
+		_xdr_argument = (xdrproc_t) xdr_prlimit64_request;
+		_xdr_result = (xdrproc_t) xdr_prlimit64_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_prlimit64_1_svc;
+		break;
+
+	case SYSCALL_IOCTL:
+		_xdr_argument = (xdrproc_t) xdr_ioctl_request;
+		_xdr_result = (xdrproc_t) xdr_ioctl_response;
+		local = (char *(*)(char *, struct svc_req *)) syscall_ioctl_1_svc;
 		break;
 
 	default:

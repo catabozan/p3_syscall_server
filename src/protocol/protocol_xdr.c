@@ -765,3 +765,344 @@ xdr_fdatasync_response (XDR *xdrs, fdatasync_response *objp)
 		 return FALSE;
 	return TRUE;
 }
+
+bool_t
+xdr_lseek_request (XDR *xdrs, lseek_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	 if (!xdr_quad_t (xdrs, &objp->offset))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->whence))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_lseek_response (XDR *xdrs, lseek_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_quad_t (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_access_request (XDR *xdrs, access_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_string (xdrs, &objp->path, MAX_PATH_LEN))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->mode))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_access_response (XDR *xdrs, access_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_unlink_request (XDR *xdrs, unlink_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_string (xdrs, &objp->path, MAX_PATH_LEN))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_unlink_response (XDR *xdrs, unlink_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_getcwd_request (XDR *xdrs, getcwd_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_u_int (xdrs, &objp->size))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_getcwd_response (XDR *xdrs, getcwd_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_string (xdrs, &objp->path, MAX_PATH_LEN))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_rlimit_data (XDR *xdrs, rlimit_data *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_u_quad_t (xdrs, &objp->rlim_cur))
+		 return FALSE;
+	 if (!xdr_u_quad_t (xdrs, &objp->rlim_max))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_prlimit64_request (XDR *xdrs, prlimit64_request *objp)
+{
+	register int32_t *buf;
+
+
+	if (xdrs->x_op == XDR_ENCODE) {
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->pid))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->resource))
+				 return FALSE;
+			 if (!xdr_bool (xdrs, &objp->has_new_limit))
+				 return FALSE;
+
+		} else {
+		IXDR_PUT_LONG(buf, objp->pid);
+		IXDR_PUT_LONG(buf, objp->resource);
+		IXDR_PUT_BOOL(buf, objp->has_new_limit);
+		}
+		 if (!xdr_rlimit_data (xdrs, &objp->new_limit))
+			 return FALSE;
+		 if (!xdr_bool (xdrs, &objp->request_old_limit))
+			 return FALSE;
+		return TRUE;
+	} else if (xdrs->x_op == XDR_DECODE) {
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->pid))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->resource))
+				 return FALSE;
+			 if (!xdr_bool (xdrs, &objp->has_new_limit))
+				 return FALSE;
+
+		} else {
+		objp->pid = IXDR_GET_LONG(buf);
+		objp->resource = IXDR_GET_LONG(buf);
+		objp->has_new_limit = IXDR_GET_BOOL(buf);
+		}
+		 if (!xdr_rlimit_data (xdrs, &objp->new_limit))
+			 return FALSE;
+		 if (!xdr_bool (xdrs, &objp->request_old_limit))
+			 return FALSE;
+	 return TRUE;
+	}
+
+	 if (!xdr_int (xdrs, &objp->pid))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->resource))
+		 return FALSE;
+	 if (!xdr_bool (xdrs, &objp->has_new_limit))
+		 return FALSE;
+	 if (!xdr_rlimit_data (xdrs, &objp->new_limit))
+		 return FALSE;
+	 if (!xdr_bool (xdrs, &objp->request_old_limit))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_prlimit64_response (XDR *xdrs, prlimit64_response *objp)
+{
+	register int32_t *buf;
+
+
+	if (xdrs->x_op == XDR_ENCODE) {
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->result))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->err))
+				 return FALSE;
+			 if (!xdr_bool (xdrs, &objp->has_old_limit))
+				 return FALSE;
+
+		} else {
+		IXDR_PUT_LONG(buf, objp->result);
+		IXDR_PUT_LONG(buf, objp->err);
+		IXDR_PUT_BOOL(buf, objp->has_old_limit);
+		}
+		 if (!xdr_rlimit_data (xdrs, &objp->old_limit))
+			 return FALSE;
+		return TRUE;
+	} else if (xdrs->x_op == XDR_DECODE) {
+		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_int (xdrs, &objp->result))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->err))
+				 return FALSE;
+			 if (!xdr_bool (xdrs, &objp->has_old_limit))
+				 return FALSE;
+
+		} else {
+		objp->result = IXDR_GET_LONG(buf);
+		objp->err = IXDR_GET_LONG(buf);
+		objp->has_old_limit = IXDR_GET_BOOL(buf);
+		}
+		 if (!xdr_rlimit_data (xdrs, &objp->old_limit))
+			 return FALSE;
+	 return TRUE;
+	}
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	 if (!xdr_bool (xdrs, &objp->has_old_limit))
+		 return FALSE;
+	 if (!xdr_rlimit_data (xdrs, &objp->old_limit))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_winsize_data (XDR *xdrs, winsize_data *objp)
+{
+	register int32_t *buf;
+
+
+	if (xdrs->x_op == XDR_ENCODE) {
+		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_short (xdrs, &objp->ws_row))
+				 return FALSE;
+			 if (!xdr_u_short (xdrs, &objp->ws_col))
+				 return FALSE;
+			 if (!xdr_u_short (xdrs, &objp->ws_xpixel))
+				 return FALSE;
+			 if (!xdr_u_short (xdrs, &objp->ws_ypixel))
+				 return FALSE;
+		} else {
+			IXDR_PUT_U_SHORT(buf, objp->ws_row);
+			IXDR_PUT_U_SHORT(buf, objp->ws_col);
+			IXDR_PUT_U_SHORT(buf, objp->ws_xpixel);
+			IXDR_PUT_U_SHORT(buf, objp->ws_ypixel);
+		}
+		return TRUE;
+	} else if (xdrs->x_op == XDR_DECODE) {
+		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
+		if (buf == NULL) {
+			 if (!xdr_u_short (xdrs, &objp->ws_row))
+				 return FALSE;
+			 if (!xdr_u_short (xdrs, &objp->ws_col))
+				 return FALSE;
+			 if (!xdr_u_short (xdrs, &objp->ws_xpixel))
+				 return FALSE;
+			 if (!xdr_u_short (xdrs, &objp->ws_ypixel))
+				 return FALSE;
+		} else {
+			objp->ws_row = IXDR_GET_U_SHORT(buf);
+			objp->ws_col = IXDR_GET_U_SHORT(buf);
+			objp->ws_xpixel = IXDR_GET_U_SHORT(buf);
+			objp->ws_ypixel = IXDR_GET_U_SHORT(buf);
+		}
+	 return TRUE;
+	}
+
+	 if (!xdr_u_short (xdrs, &objp->ws_row))
+		 return FALSE;
+	 if (!xdr_u_short (xdrs, &objp->ws_col))
+		 return FALSE;
+	 if (!xdr_u_short (xdrs, &objp->ws_xpixel))
+		 return FALSE;
+	 if (!xdr_u_short (xdrs, &objp->ws_ypixel))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_ioctl_arg_type (XDR *xdrs, ioctl_arg_type *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_enum (xdrs, (enum_t *) objp))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_ioctl_arg (XDR *xdrs, ioctl_arg *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_ioctl_arg_type (xdrs, &objp->type))
+		 return FALSE;
+	switch (objp->type) {
+	case IOCTL_ARG_NONE:
+		break;
+	case IOCTL_ARG_INT:
+		 if (!xdr_int (xdrs, &objp->ioctl_arg_u.int_arg))
+			 return FALSE;
+		break;
+	case IOCTL_ARG_WINSIZE:
+		 if (!xdr_winsize_data (xdrs, &objp->ioctl_arg_u.winsize_arg))
+			 return FALSE;
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+bool_t
+xdr_ioctl_request (XDR *xdrs, ioctl_request *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->fd))
+		 return FALSE;
+	 if (!xdr_u_long (xdrs, &objp->request))
+		 return FALSE;
+	 if (!xdr_ioctl_arg (xdrs, &objp->arg_in))
+		 return FALSE;
+	return TRUE;
+}
+
+bool_t
+xdr_ioctl_response (XDR *xdrs, ioctl_response *objp)
+{
+	register int32_t *buf;
+
+	 if (!xdr_int (xdrs, &objp->result))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->err))
+		 return FALSE;
+	 if (!xdr_ioctl_arg (xdrs, &objp->arg_out))
+		 return FALSE;
+	return TRUE;
+}

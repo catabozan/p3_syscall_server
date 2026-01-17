@@ -244,6 +244,115 @@ struct fdatasync_response {
 };
 typedef struct fdatasync_response fdatasync_response;
 
+struct lseek_request {
+	int fd;
+	quad_t offset;
+	int whence;
+};
+typedef struct lseek_request lseek_request;
+
+struct lseek_response {
+	quad_t result;
+	int err;
+};
+typedef struct lseek_response lseek_response;
+
+struct access_request {
+	char *path;
+	int mode;
+};
+typedef struct access_request access_request;
+
+struct access_response {
+	int result;
+	int err;
+};
+typedef struct access_response access_response;
+
+struct unlink_request {
+	char *path;
+};
+typedef struct unlink_request unlink_request;
+
+struct unlink_response {
+	int result;
+	int err;
+};
+typedef struct unlink_response unlink_response;
+
+struct getcwd_request {
+	u_int size;
+};
+typedef struct getcwd_request getcwd_request;
+
+struct getcwd_response {
+	char *path;
+	int result;
+	int err;
+};
+typedef struct getcwd_response getcwd_response;
+
+struct rlimit_data {
+	u_quad_t rlim_cur;
+	u_quad_t rlim_max;
+};
+typedef struct rlimit_data rlimit_data;
+
+struct prlimit64_request {
+	int pid;
+	int resource;
+	bool_t has_new_limit;
+	rlimit_data new_limit;
+	bool_t request_old_limit;
+};
+typedef struct prlimit64_request prlimit64_request;
+
+struct prlimit64_response {
+	int result;
+	int err;
+	bool_t has_old_limit;
+	rlimit_data old_limit;
+};
+typedef struct prlimit64_response prlimit64_response;
+
+struct winsize_data {
+	u_short ws_row;
+	u_short ws_col;
+	u_short ws_xpixel;
+	u_short ws_ypixel;
+};
+typedef struct winsize_data winsize_data;
+
+enum ioctl_arg_type {
+	IOCTL_ARG_NONE = 0,
+	IOCTL_ARG_INT = 1,
+	IOCTL_ARG_WINSIZE = 2,
+};
+typedef enum ioctl_arg_type ioctl_arg_type;
+
+struct ioctl_arg {
+	ioctl_arg_type type;
+	union {
+		int int_arg;
+		winsize_data winsize_arg;
+	} ioctl_arg_u;
+};
+typedef struct ioctl_arg ioctl_arg;
+
+struct ioctl_request {
+	int fd;
+	u_long request;
+	ioctl_arg arg_in;
+};
+typedef struct ioctl_request ioctl_request;
+
+struct ioctl_response {
+	int result;
+	int err;
+	ioctl_arg arg_out;
+};
+typedef struct ioctl_response ioctl_response;
+
 #define SYSCALL_PROG 0x20000001
 #define SYSCALL_VERS 1
 
@@ -284,6 +393,24 @@ extern  fcntl_response * syscall_fcntl_1_svc(fcntl_request *, struct svc_req *);
 #define SYSCALL_FDATASYNC 12
 extern  fdatasync_response * syscall_fdatasync_1(fdatasync_request *, CLIENT *);
 extern  fdatasync_response * syscall_fdatasync_1_svc(fdatasync_request *, struct svc_req *);
+#define SYSCALL_LSEEK 13
+extern  lseek_response * syscall_lseek_1(lseek_request *, CLIENT *);
+extern  lseek_response * syscall_lseek_1_svc(lseek_request *, struct svc_req *);
+#define SYSCALL_ACCESS 14
+extern  access_response * syscall_access_1(access_request *, CLIENT *);
+extern  access_response * syscall_access_1_svc(access_request *, struct svc_req *);
+#define SYSCALL_UNLINK 15
+extern  unlink_response * syscall_unlink_1(unlink_request *, CLIENT *);
+extern  unlink_response * syscall_unlink_1_svc(unlink_request *, struct svc_req *);
+#define SYSCALL_GETCWD 16
+extern  getcwd_response * syscall_getcwd_1(getcwd_request *, CLIENT *);
+extern  getcwd_response * syscall_getcwd_1_svc(getcwd_request *, struct svc_req *);
+#define SYSCALL_PRLIMIT64 17
+extern  prlimit64_response * syscall_prlimit64_1(prlimit64_request *, CLIENT *);
+extern  prlimit64_response * syscall_prlimit64_1_svc(prlimit64_request *, struct svc_req *);
+#define SYSCALL_IOCTL 18
+extern  ioctl_response * syscall_ioctl_1(ioctl_request *, CLIENT *);
+extern  ioctl_response * syscall_ioctl_1_svc(ioctl_request *, struct svc_req *);
 extern int syscall_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
@@ -323,6 +450,24 @@ extern  fcntl_response * syscall_fcntl_1_svc();
 #define SYSCALL_FDATASYNC 12
 extern  fdatasync_response * syscall_fdatasync_1();
 extern  fdatasync_response * syscall_fdatasync_1_svc();
+#define SYSCALL_LSEEK 13
+extern  lseek_response * syscall_lseek_1();
+extern  lseek_response * syscall_lseek_1_svc();
+#define SYSCALL_ACCESS 14
+extern  access_response * syscall_access_1();
+extern  access_response * syscall_access_1_svc();
+#define SYSCALL_UNLINK 15
+extern  unlink_response * syscall_unlink_1();
+extern  unlink_response * syscall_unlink_1_svc();
+#define SYSCALL_GETCWD 16
+extern  getcwd_response * syscall_getcwd_1();
+extern  getcwd_response * syscall_getcwd_1_svc();
+#define SYSCALL_PRLIMIT64 17
+extern  prlimit64_response * syscall_prlimit64_1();
+extern  prlimit64_response * syscall_prlimit64_1_svc();
+#define SYSCALL_IOCTL 18
+extern  ioctl_response * syscall_ioctl_1();
+extern  ioctl_response * syscall_ioctl_1_svc();
 extern int syscall_prog_1_freeresult ();
 #endif /* K&R C */
 
@@ -356,6 +501,22 @@ extern  bool_t xdr_fcntl_request (XDR *, fcntl_request*);
 extern  bool_t xdr_fcntl_response (XDR *, fcntl_response*);
 extern  bool_t xdr_fdatasync_request (XDR *, fdatasync_request*);
 extern  bool_t xdr_fdatasync_response (XDR *, fdatasync_response*);
+extern  bool_t xdr_lseek_request (XDR *, lseek_request*);
+extern  bool_t xdr_lseek_response (XDR *, lseek_response*);
+extern  bool_t xdr_access_request (XDR *, access_request*);
+extern  bool_t xdr_access_response (XDR *, access_response*);
+extern  bool_t xdr_unlink_request (XDR *, unlink_request*);
+extern  bool_t xdr_unlink_response (XDR *, unlink_response*);
+extern  bool_t xdr_getcwd_request (XDR *, getcwd_request*);
+extern  bool_t xdr_getcwd_response (XDR *, getcwd_response*);
+extern  bool_t xdr_rlimit_data (XDR *, rlimit_data*);
+extern  bool_t xdr_prlimit64_request (XDR *, prlimit64_request*);
+extern  bool_t xdr_prlimit64_response (XDR *, prlimit64_response*);
+extern  bool_t xdr_winsize_data (XDR *, winsize_data*);
+extern  bool_t xdr_ioctl_arg_type (XDR *, ioctl_arg_type*);
+extern  bool_t xdr_ioctl_arg (XDR *, ioctl_arg*);
+extern  bool_t xdr_ioctl_request (XDR *, ioctl_request*);
+extern  bool_t xdr_ioctl_response (XDR *, ioctl_response*);
 
 #else /* K&R C */
 extern bool_t xdr_open_request ();
@@ -385,6 +546,22 @@ extern bool_t xdr_fcntl_request ();
 extern bool_t xdr_fcntl_response ();
 extern bool_t xdr_fdatasync_request ();
 extern bool_t xdr_fdatasync_response ();
+extern bool_t xdr_lseek_request ();
+extern bool_t xdr_lseek_response ();
+extern bool_t xdr_access_request ();
+extern bool_t xdr_access_response ();
+extern bool_t xdr_unlink_request ();
+extern bool_t xdr_unlink_response ();
+extern bool_t xdr_getcwd_request ();
+extern bool_t xdr_getcwd_response ();
+extern bool_t xdr_rlimit_data ();
+extern bool_t xdr_prlimit64_request ();
+extern bool_t xdr_prlimit64_response ();
+extern bool_t xdr_winsize_data ();
+extern bool_t xdr_ioctl_arg_type ();
+extern bool_t xdr_ioctl_arg ();
+extern bool_t xdr_ioctl_request ();
+extern bool_t xdr_ioctl_response ();
 
 #endif /* K&R C */
 

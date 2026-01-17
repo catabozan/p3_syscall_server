@@ -19,7 +19,7 @@ static __thread int in_newfstatat_intercept = 0;
 int newfstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags) {
     /* Check reentry guard - if already inside or RPC in progress, use direct syscall */
     if (in_newfstatat_intercept || is_rpc_in_progress()) {
-        return syscall(SYS_newfstatat, pathname, statbuf);
+        return syscall(SYS_newfstatat, dirfd, pathname, statbuf, flags);
     }
 
     /* Set guard */
@@ -28,7 +28,7 @@ int newfstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags)
     /* Debug message using raw syscall */
     char debug_msg[256];
     int msg_len = snprintf(debug_msg, sizeof(debug_msg),
-                          "[Client] Intercepted newfstatat(%u, \"%s\", buf, %u)\n", dirfd,
+                          "[Client] Intercepted newfstatat(%d, \"%s\", buf, %d)\n", dirfd,
                           pathname, flags);
     syscall(SYS_write, STDERR_FILENO, debug_msg, msg_len);
 
@@ -95,7 +95,7 @@ int newfstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags)
         /* No RPC connection - fall back to direct syscall */
         const char *fallback_msg = "[Client] No RPC connection, using direct syscall\n";
         syscall(SYS_write, STDERR_FILENO, fallback_msg, strlen(fallback_msg));
-        result = syscall(SYS_newfstatat, pathname, statbuf);
+        result = syscall(SYS_newfstatat, dirfd, pathname, statbuf, flags);
     }
 
     /* Clear guard */

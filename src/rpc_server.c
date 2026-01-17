@@ -5,6 +5,7 @@
  * executes them, and returns results with errno propagation.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,10 @@
 #include <rpc/rpc.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/resource.h>
+#include <sys/ioctl.h>
+#include <termios.h>
+#include <linux/limits.h>
 #include "protocol/protocol.h"
 #include "transport_config.h"
 
@@ -196,11 +201,15 @@ syscall_close_1_svc(close_request *req, struct svc_req *rqstp) {
     } else {
         /* Execute the actual close syscall */
         res.result = close(server_fd);
-        res.err = errno;
 
-        /* Remove FD mapping */
         if (res.result == 0) {
+            /* Success */
+            res.err = 0;
+            /* Remove FD mapping */
             remove_fd_mapping(req->fd);
+        } else {
+            /* Failure */
+            res.err = errno;
         }
 
         fprintf(stderr, "[Server] CLOSE result: %d, errno=%d\n", res.result, res.err);
@@ -240,18 +249,19 @@ syscall_read_1_svc(read_request *req, struct svc_req *rqstp) {
 
         /* Execute the actual read syscall */
         ssize_t bytes_read = read(server_fd, buffer, count);
-        res.err = errno;
 
         if (bytes_read >= 0) {
             /* Success: populate response with data */
             res.data.data_val = buffer;
             res.data.data_len = bytes_read;
             res.result = bytes_read;
+            res.err = 0;
         } else {
             /* Failure */
             res.data.data_val = NULL;
             res.data.data_len = 0;
             res.result = -1;
+            res.err = errno;
         }
 
         fprintf(stderr, "[Server] READ result: %zd bytes, errno=%d\n",
@@ -292,18 +302,19 @@ syscall_pread_1_svc(pread_request *req, struct svc_req *rqstp) {
 
         /* Execute the actual read syscall */
         ssize_t bytes_read = pread(server_fd, buffer, count, req->offset);
-        res.err = errno;
 
         if (bytes_read >= 0) {
             /* Success: populate response with data */
             res.data.data_val = buffer;
             res.data.data_len = bytes_read;
             res.result = bytes_read;
+            res.err = 0;
         } else {
             /* Failure */
             res.data.data_val = NULL;
             res.data.data_len = 0;
             res.result = -1;
+            res.err = errno;
         }
 
         fprintf(stderr, "[Server] PREAD result: %zd bytes, errno=%d\n",
@@ -336,7 +347,12 @@ syscall_write_1_svc(write_request *req, struct svc_req *rqstp) {
         ssize_t bytes_written = write(server_fd, req->data.data_val,
                                       req->data.data_len);
         res.result = bytes_written;
-        res.err = errno;
+
+        if (bytes_written >= 0) {
+            res.err = 0;
+        } else {
+            res.err = errno;
+        }
 
         fprintf(stderr, "[Server] WRITE result: %zd bytes, errno=%d\n",
                 bytes_written, res.err);
@@ -368,9 +384,14 @@ syscall_pwrite_1_svc(pwrite_request *req, struct svc_req *rqstp) {
         ssize_t bytes_written = pwrite(server_fd, req->data.data_val,
                                       req->data.data_len, req->offset);
         res.result = bytes_written;
-        res.err = errno;
 
-        fprintf(stderr, "[Server] WRITE result: %zd bytes, errno=%d\n",
+        if (bytes_written >= 0) {
+            res.err = 0;
+        } else {
+            res.err = errno;
+        }
+
+        fprintf(stderr, "[Server] PWRITE result: %zd bytes, errno=%d\n",
                 bytes_written, res.err);
     }
 
@@ -414,7 +435,7 @@ syscall_stat_1_svc(stat_request *req, struct svc_req *rqstp) {
     } else {
         /* Failure */
         res.result = -1;
-        res.err = 0;
+        res.err = saved_errno;
         res.dev = 0;
         res.ino = 0;
         res.mode = 0;
@@ -471,7 +492,7 @@ syscall_newfstatat_1_svc(newfstatat_request *req, struct svc_req *rqstp) {
     } else {
         /* Failure */
         res.result = -1;
-        res.err = 0;
+        res.err = saved_errno;
         res.dev = 0;
         res.ino = 0;
         res.mode = 0;
@@ -532,7 +553,7 @@ syscall_fstat_1_svc(fstat_request *req, struct svc_req *rqstp) {
     } else {
         /* Failure */
         res.result = -1;
-        res.err = 0;
+        res.err = saved_errno;
         res.dev = 0;
         res.ino = 0;
         res.mode = 0;
@@ -797,14 +818,310 @@ syscall_fdatasync_1_svc(fdatasync_request *req, struct svc_req *rqstp) {
         res.err = EBADF;
         fprintf(stderr, "[Server] WRITE FDATASYNC: invalid client_fd=%d\n", req->fd);
     } else {
-        /* Execute the actual write syscall */
-        ssize_t bytes_written = fdatasync(server_fd);
-        res.result = bytes_written;
-        res.err = errno;
+        /* Execute the actual fdatasync syscall */
+        int result = fdatasync(server_fd);
+        res.result = result;
 
-        fprintf(stderr, "[Server] FDATASYNC result: %zd, errno=%d\n",
+        if (result == 0) {
+            res.err = 0;
+        } else {
+            res.err = errno;
+        }
+
+        fprintf(stderr, "[Server] FDATASYNC result: %d, errno=%d\n",
                 res.result, res.err);
     }
+
+    return &res;
+}
+
+/*
+ * SYSCALL_LSEEK implementation
+ */
+lseek_response *
+syscall_lseek_1_svc(lseek_request *req, struct svc_req *rqstp) {
+    static lseek_response res;
+
+    fprintf(stderr, "[Server] LSEEK: client_fd=%d, offset=%ld, whence=%d\n",
+            req->fd, req->offset, req->whence);
+
+    /* Translate client FD to server FD */
+    int server_fd = translate_fd(req->fd);
+
+    if (server_fd < 0) {
+        /* Invalid FD */
+        res.result = -1;
+        res.err = EBADF;
+        fprintf(stderr, "[Server] LSEEK failed: invalid client_fd=%d\n", req->fd);
+    } else {
+        /* Execute the actual lseek syscall */
+        off_t new_offset = lseek(server_fd, req->offset, req->whence);
+        res.result = new_offset;
+
+        if (new_offset != (off_t)-1) {
+            res.err = 0;
+        } else {
+            res.err = errno;
+        }
+
+        fprintf(stderr, "[Server] LSEEK result: %ld, errno=%d\n",
+                res.result, res.err);
+    }
+
+    return &res;
+}
+
+/*
+ * SYSCALL_ACCESS implementation
+ */
+access_response *
+syscall_access_1_svc(access_request *req, struct svc_req *rqstp) {
+    static access_response res;
+
+    fprintf(stderr, "[Server] ACCESS: path=%s, mode=%d\n", req->path, req->mode);
+
+    /* Execute the actual access syscall */
+    int access_result = access(req->path, req->mode);
+
+    res.result = access_result;
+    if (access_result == 0) {
+        res.err = 0;
+    } else {
+        res.err = errno;
+    }
+
+    fprintf(stderr, "[Server] ACCESS result: %d, errno=%d\n",
+            res.result, res.err);
+
+    return &res;
+}
+
+/*
+ * SYSCALL_UNLINK implementation
+ */
+unlink_response *
+syscall_unlink_1_svc(unlink_request *req, struct svc_req *rqstp) {
+    static unlink_response res;
+
+    fprintf(stderr, "[Server] UNLINK: path=%s\n", req->path);
+
+    /* Execute the actual unlink syscall */
+    int unlink_result = unlink(req->path);
+
+    res.result = unlink_result;
+    if (unlink_result == 0) {
+        res.err = 0;
+    } else {
+        res.err = errno;
+    }
+
+    fprintf(stderr, "[Server] UNLINK result: %d, errno=%d\n",
+            res.result, res.err);
+
+    return &res;
+}
+
+/*
+ * SYSCALL_GETCWD implementation
+ */
+getcwd_response *
+syscall_getcwd_1_svc(getcwd_request *req, struct svc_req *rqstp) {
+    static getcwd_response res;
+    static char cwd_buffer[PATH_MAX];
+
+    fprintf(stderr, "[Server] GETCWD: size=%u\n", req->size);
+
+    /* Execute the actual getcwd syscall */
+    char *cwd_result = getcwd(cwd_buffer, sizeof(cwd_buffer));
+    int saved_errno = errno;
+
+    if (cwd_result != NULL) {
+        /* Success */
+        res.path = cwd_buffer;
+        res.result = 0;
+        res.err = 0;
+        fprintf(stderr, "[Server] GETCWD result: \"%s\", errno=%d\n",
+                cwd_buffer, res.err);
+    } else {
+        /* Failure */
+        res.path = "";
+        res.result = -1;
+        res.err = saved_errno;
+        fprintf(stderr, "[Server] GETCWD failed: errno=%d\n", res.err);
+    }
+
+    return &res;
+}
+
+/*
+ * SYSCALL_PRLIMIT64 implementation
+ */
+prlimit64_response *
+syscall_prlimit64_1_svc(prlimit64_request *req, struct svc_req *rqstp) {
+    static prlimit64_response res;
+    struct rlimit new_limit_local;
+    struct rlimit old_limit_local;
+    struct rlimit *new_limit_ptr = NULL;
+    struct rlimit *old_limit_ptr = NULL;
+
+    fprintf(stderr, "[Server] PRLIMIT64: pid=%d, resource=%d, has_new_limit=%d, request_old_limit=%d\n",
+            req->pid, req->resource, req->has_new_limit, req->request_old_limit);
+
+    /* Prepare new_limit pointer */
+    if (req->has_new_limit) {
+        new_limit_local.rlim_cur = req->new_limit.rlim_cur;
+        new_limit_local.rlim_max = req->new_limit.rlim_max;
+        new_limit_ptr = &new_limit_local;
+    }
+
+    /* Prepare old_limit pointer */
+    if (req->request_old_limit) {
+        old_limit_ptr = &old_limit_local;
+    }
+
+    /* Execute the actual prlimit64 syscall */
+    int prlimit_result = prlimit(req->pid, req->resource, new_limit_ptr, old_limit_ptr);
+
+    res.result = prlimit_result;
+
+    if (prlimit_result == 0) {
+        res.err = 0;
+        /* Copy old_limit if requested and successful */
+        if (req->request_old_limit) {
+            res.has_old_limit = TRUE;
+            res.old_limit.rlim_cur = old_limit_local.rlim_cur;
+            res.old_limit.rlim_max = old_limit_local.rlim_max;
+        } else {
+            res.has_old_limit = FALSE;
+            res.old_limit.rlim_cur = 0;
+            res.old_limit.rlim_max = 0;
+        }
+    } else {
+        res.err = errno;
+        res.has_old_limit = FALSE;
+        res.old_limit.rlim_cur = 0;
+        res.old_limit.rlim_max = 0;
+    }
+
+    fprintf(stderr, "[Server] PRLIMIT64 result: %d, errno=%d\n",
+            res.result, res.err);
+
+    return &res;
+}
+
+/*
+ * Helper function for IOCTL - determine argument type
+ */
+static ioctl_arg_type get_ioctl_arg_type_server(unsigned long request) {
+    switch (request) {
+        case TIOCGWINSZ:  /* 0x5413 */
+        case TIOCSWINSZ:  /* 0x5414 */
+            return IOCTL_ARG_WINSIZE;
+
+        case FIONREAD:    /* 0x541B */
+        case FIONBIO:     /* 0x5421 */
+            return IOCTL_ARG_INT;
+
+        default:
+            return IOCTL_ARG_NONE;
+    }
+}
+
+/*
+ * SYSCALL_IOCTL implementation
+ */
+ioctl_response *
+syscall_ioctl_1_svc(ioctl_request *req, struct svc_req *rqstp) {
+    static ioctl_response res;
+    int int_arg_local;
+    struct winsize winsize_arg_local;
+
+    fprintf(stderr, "[Server] IOCTL: client_fd=%d, request=0x%lx\n",
+            req->fd, req->request);
+
+    /* Initialize response */
+    memset(&res, 0, sizeof(res));
+    res.arg_out.type = IOCTL_ARG_NONE;
+
+    /* Translate client FD to server FD */
+    int server_fd = translate_fd(req->fd);
+
+    if (server_fd < 0) {
+        /* Invalid FD */
+        res.result = -1;
+        res.err = EBADF;
+        fprintf(stderr, "[Server] IOCTL failed: invalid client_fd=%d\n", req->fd);
+        return &res;
+    }
+
+    /* Verify this is a supported ioctl */
+    ioctl_arg_type expected_type = get_ioctl_arg_type_server(req->request);
+    if (expected_type == IOCTL_ARG_NONE) {
+        /* Unsupported ioctl */
+        res.result = -1;
+        res.err = ENOTTY;
+        fprintf(stderr, "[Server] IOCTL failed: unsupported request=0x%lx\n", req->request);
+        return &res;
+    }
+
+    /* Execute ioctl based on type */
+    int ioctl_result = -1;
+
+    switch (req->arg_in.type) {
+        case IOCTL_ARG_INT:
+            int_arg_local = req->arg_in.ioctl_arg_u.int_arg;
+            ioctl_result = ioctl(server_fd, req->request, &int_arg_local);
+
+            if (ioctl_result >= 0) {
+                res.err = 0;
+                /* For "get" operations, copy result back */
+                if (req->request == FIONREAD) {
+                    res.arg_out.type = IOCTL_ARG_INT;
+                    res.arg_out.ioctl_arg_u.int_arg = int_arg_local;
+                }
+            } else {
+                res.err = errno;
+            }
+            break;
+
+        case IOCTL_ARG_WINSIZE:
+            if (req->request == TIOCSWINSZ) {
+                /* Set window size */
+                winsize_arg_local.ws_row = req->arg_in.ioctl_arg_u.winsize_arg.ws_row;
+                winsize_arg_local.ws_col = req->arg_in.ioctl_arg_u.winsize_arg.ws_col;
+                winsize_arg_local.ws_xpixel = req->arg_in.ioctl_arg_u.winsize_arg.ws_xpixel;
+                winsize_arg_local.ws_ypixel = req->arg_in.ioctl_arg_u.winsize_arg.ws_ypixel;
+                ioctl_result = ioctl(server_fd, req->request, &winsize_arg_local);
+            } else if (req->request == TIOCGWINSZ) {
+                /* Get window size */
+                ioctl_result = ioctl(server_fd, req->request, &winsize_arg_local);
+                if (ioctl_result >= 0) {
+                    res.arg_out.type = IOCTL_ARG_WINSIZE;
+                    res.arg_out.ioctl_arg_u.winsize_arg.ws_row = winsize_arg_local.ws_row;
+                    res.arg_out.ioctl_arg_u.winsize_arg.ws_col = winsize_arg_local.ws_col;
+                    res.arg_out.ioctl_arg_u.winsize_arg.ws_xpixel = winsize_arg_local.ws_xpixel;
+                    res.arg_out.ioctl_arg_u.winsize_arg.ws_ypixel = winsize_arg_local.ws_ypixel;
+                }
+            }
+
+            if (ioctl_result >= 0) {
+                res.err = 0;
+            } else {
+                res.err = errno;
+            }
+            break;
+
+        default:
+            res.result = -1;
+            res.err = EINVAL;
+            fprintf(stderr, "[Server] IOCTL failed: invalid argument type\n");
+            return &res;
+    }
+
+    res.result = ioctl_result;
+
+    fprintf(stderr, "[Server] IOCTL result: %d, errno=%d\n",
+            res.result, res.err);
 
     return &res;
 }

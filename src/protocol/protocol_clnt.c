@@ -188,3 +188,93 @@ syscall_fdatasync_1(fdatasync_request *argp, CLIENT *clnt)
 	}
 	return (&clnt_res);
 }
+
+lseek_response *
+syscall_lseek_1(lseek_request *argp, CLIENT *clnt)
+{
+	static lseek_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_LSEEK,
+		(xdrproc_t) xdr_lseek_request, (caddr_t) argp,
+		(xdrproc_t) xdr_lseek_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+access_response *
+syscall_access_1(access_request *argp, CLIENT *clnt)
+{
+	static access_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_ACCESS,
+		(xdrproc_t) xdr_access_request, (caddr_t) argp,
+		(xdrproc_t) xdr_access_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+unlink_response *
+syscall_unlink_1(unlink_request *argp, CLIENT *clnt)
+{
+	static unlink_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_UNLINK,
+		(xdrproc_t) xdr_unlink_request, (caddr_t) argp,
+		(xdrproc_t) xdr_unlink_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+getcwd_response *
+syscall_getcwd_1(getcwd_request *argp, CLIENT *clnt)
+{
+	static getcwd_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_GETCWD,
+		(xdrproc_t) xdr_getcwd_request, (caddr_t) argp,
+		(xdrproc_t) xdr_getcwd_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+prlimit64_response *
+syscall_prlimit64_1(prlimit64_request *argp, CLIENT *clnt)
+{
+	static prlimit64_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_PRLIMIT64,
+		(xdrproc_t) xdr_prlimit64_request, (caddr_t) argp,
+		(xdrproc_t) xdr_prlimit64_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}
+
+ioctl_response *
+syscall_ioctl_1(ioctl_request *argp, CLIENT *clnt)
+{
+	static ioctl_response clnt_res;
+
+	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+	if (clnt_call (clnt, SYSCALL_IOCTL,
+		(xdrproc_t) xdr_ioctl_request, (caddr_t) argp,
+		(xdrproc_t) xdr_ioctl_response, (caddr_t) &clnt_res,
+		TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&clnt_res);
+}

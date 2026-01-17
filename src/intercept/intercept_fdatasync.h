@@ -28,7 +28,7 @@ int fdatasync(int fd) {
     /* Debug message using raw syscall */
     char debug_msg[256];
     int msg_len = snprintf(debug_msg, sizeof(debug_msg),
-                          "[Client] Intercepted fdatasync(%d, buf)\n",
+                          "[Client] Intercepted fdatasync(%d)\n",
                           fd);
     syscall(SYS_write, STDERR_FILENO, debug_msg, msg_len);
 

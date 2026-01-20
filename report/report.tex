@@ -1,0 +1,21 @@
+% Put here for VS Code Latex Workshop extension to find root file.
+% As reported by Marques Reis Henrique, 2023-05-08.
+% See https://github.com/James-Yu/LaTeX-Workshop/wiki/Compile#multi-file-projects for more details. 
+\documentclass[oneside,openright,a4paper, 11pt]{report}
+
+\input{structure_and_commands.tex}
+
+\begin{document}
+
+\input{./title.tex}
+\newpage
+\pagenumbering{roman} % Roman page numbering - lowercase
+
+\input{./content.tex}
+
+\listoffigures
+%\printbibliography
+
+\bibliographystyle{IEEEtran}
+\bibliography{biblio}{}
+\end{document}

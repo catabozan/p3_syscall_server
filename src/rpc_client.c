@@ -6,6 +6,8 @@
  */
 
 #define _GNU_SOURCE
+#include "transport_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +20,11 @@
 #include <netinet/in.h>
 #include <rpc/rpc.h>
 #include "protocol/protocol.h"
-#include "transport_config.h"
+
+/* Helper function for direct syscall output (bypasses LD_PRELOAD) */
+static void write_direct(const char *msg) {
+    syscall(SYS_write, STDERR_FILENO, msg, strlen(msg));
+}
 
 /* Thread-local RPC client handle for persistent connection */
 static __thread CLIENT *rpc_client = NULL;
@@ -56,6 +62,9 @@ CLIENT *get_rpc_client(void) {
     in_rpc_init = 1;
     rpc_in_progress = 1;  /* Disable all interception during init */
 
+    write_direct("SYSCALL INTERCEPTION CLIENT - CATALIN BOZAN\n");
+    write_direct("Haute Ecole Arc - All rights reserved\n\n");
+
     /* Get transport configuration */
     transport = get_transport_type();
 
@@ -77,11 +86,12 @@ CLIENT *get_rpc_client(void) {
         strncpy(server_addr.sun_path, UNIX_SOCKET_PATH, sizeof(server_addr.sun_path) - 1);
 
         if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-            const char *msg = "[Client] Failed to connect to UNIX socket\n";
-            syscall(SYS_write, STDERR_FILENO, msg, strlen(msg));
+            write_direct("[Client] Failed to connect to UNIX socket\n");
             close(sock);
             goto error;
         }
+
+        write_direct("[Client] Connected to UNIX socket\n");
 
         /* Create RPC client from connected socket using clnt_vc_create */
         struct netbuf svcaddr;
@@ -90,20 +100,22 @@ CLIENT *get_rpc_client(void) {
 
         rpc_client = clnt_vc_create(sock, &svcaddr, SYSCALL_PROG, SYSCALL_VERS, 0, 0);
         if (rpc_client == NULL) {
-            const char *msg = "[Client] Failed to create RPC client from UNIX socket\n";
-            syscall(SYS_write, STDERR_FILENO, msg, strlen(msg));
+            write_direct("[Client] Failed to create RPC client from UNIX socket\n");
             close(sock);
             goto error;
         }
+
+        write_direct("[Client] RPC client initialized (UNIX socket)\n");
 
     } else {  /* TRANSPORT_TCP */
         /* Create TCP RPC client */
         rpc_client = clnt_create(TCP_HOST, SYSCALL_PROG, SYSCALL_VERS, "tcp");
         if (rpc_client == NULL) {
-            const char *msg = "[Client] Failed to connect via TCP\n";
-            syscall(SYS_write, STDERR_FILENO, msg, strlen(msg));
+            write_direct("[Client] Failed to connect via TCP\n");
             goto error;
         }
+
+        write_direct("[Client] RPC client initialized (TCP)\n");
     }
 
 error:

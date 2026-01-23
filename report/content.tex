@@ -8,7 +8,7 @@
   The purpose of this project is to create a proof of concept server that receives Linux syscall requests from a client, executes them, and sends back their response.
 \\
 
-  This has applications in confidential computing environments where a target program is running in a `sealed' virtual environment, but still needs some access to the host's Linux kernel. 
+  This has applications in confidential computing environments\cite{confidential_computing} where a target program is running in a `sealed' virtual environment, but still needs some access to the host's Linux kernel. 
 \\
 
   The target program's syscalls are intercepted by a client that forwards the syscalls to the server that is running somewhere else, for example on the host machine. The server executes the syscalls and returns their response to the target program, as if the syscall was performed in the target program's environment.
@@ -88,7 +88,7 @@ This syscall allows a program to map files to a certain region in memory, so tha
 Since there is no practical way of intercepting direct memory writes, it is impossible to delegate the mmap() syscall to the server. 
 \\
 
-Fortunately if you build sqlite3 from source, you can disable the mmap() syscall by using specific compilation flags. After compiling sqlite3 from source with mmap() disabled I was able to get a list of syscalls I could intercept.
+Fortunately if you build sqlite3 from source, you can disable the mmap() syscall by using specific compilation flags. After compiling sqlite3 from source with mmap() disabled I was able to get a list of syscalls I could intercept.\cite{sqlite_compile}
 \\
 
 This is the list of syscalls I had to implement in order to delegate all of sqlite3's execution to the server.
@@ -147,7 +147,7 @@ I have found a few viable options for the communication protocol: SunRPC + XDR, 
 \caption{Comparison of RPC frameworks}
 \end{table}
 
-They all have their own advantages and disadvantages, I ultimately chose SunRPC + XDR since it's lightweight, fast and widely used.
+They all have their own advantages and disadvantages, I ultimately chose SunRPC + XDR\cite{sun_rpc} since it's lightweight, fast and widely used.
 
 \section{Server}
 
@@ -222,6 +222,9 @@ This project contains a lot of folders because I have decided to keep all code a
 
   \item[\texttt{\detokenize{Makefile}}]
   - build scripts.
+
+  \item[\texttt{\detokenize{sqlite3}}]
+  - sqlite3 binary compiled without mmap().
 
   \item[\texttt{\detokenize{test_query.sql}}]
   - test SQL query.
@@ -334,7 +337,7 @@ The client is compiled as a shared library located in \textit{\detokenize{build/
   \item Intercept syscalls and forward them to the server
 \end{itemize}
 
-In order to use the client you must load the compiled shared library before all other shared libraries, by setting the \textit{\detokenize{LD_PRELOAD=build/intercept.so}} environment variable.
+In order to use the client you must load the compiled shared library before all other shared libraries, by setting the \textit{\detokenize{LD_PRELOAD=build/intercept.so}}\cite{syscall_intercept} environment variable.
 \\
 
 Since our client shared library is loaded before all other libraries, including \textit{libc} which contains the usual implementations of the system calls; we can override and, thus intercept, syscalls.
@@ -461,7 +464,7 @@ All the syscalls mentioned in the Research chapter have been implemented.
 \end{itemize}
 \end{multicols}
 
-To get to this list I have ran the \textit{strace} command.
+To get to this list I have run the \textit{strace} command.
 
 \begin{commandline}
 \begin{verbatim}
@@ -490,7 +493,7 @@ Once I had the list, with help from the professor and the Linux manual pages, I 
 
 I've implemented the syscalls in order, by their appearance count in the strace output file.
 
-\subsection{Syscall list and function}
+\subsection{Syscall list and function}\cite{linux_man}
 \begin{itemize}
   \item access() - check user's permissions for a file
   \item close() - close a file descriptor
@@ -527,5 +530,265 @@ In the interception code, I have tried to reuse as much code as possible. Here i
     return pread(fd, buf, count, offset);
   }
 \end{lstlisting}
+
+\section{Running and testing}
+
+In order to test and debug the client/server functionality, I first created a test program to test individual syscalls. Then I've used sqlite3.
+\\
+
+The client and server print syscall interception/execution logs in the terminal via printf().
+
+\subsection{Individual syscalls}
+
+To test individual syscalls, I've created a test program: \textit{\detokenize{src/program.c}}.
+\\
+
+The program has individual test functions for each syscall I've implemented that are ran sequentially in the main function.
+Here is an example:
+
+\begin{lstlisting}[style=mycode, language=C, caption=\detokenize{Test function example in program.c}] 
+static int test_open_and_openat(void)
+{
+    printf("[open/openat] Testing open() and openat()\n");
+
+    int fd = open(TEST_FILE, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd < 0)
+        return fail("open for write failed");
+
+    printf("  open(): fd=%d\n", fd);
+    close(fd);
+
+    int fd_openat = openat(AT_FDCWD, TEST_FILE, O_CREAT | O_RDWR, 0644);
+    if (fd_openat < 0)
+        return fail("openat failed");
+
+    const char *msg = "Testing openat syscall";
+    if (write(fd_openat, msg, strlen(msg)) < 0)
+        return fail("write after openat failed");
+
+    close(fd_openat);
+    printf("  openat(): success\n\n");
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection{Test program syscall interception output}
+
+Here you have what is displayed in the terminal when the \textit{src/program.c} runs with syscall interception.
+\\
+
+Strting the server:
+\begin{commandline}
+\begin{verbatim}
+$  make run_server
+
+./build/syscall_server
+[Server] Starting RPC server...
+[Server] Using UNIX transport
+[Server] RPC server ready at /tmp/p3_tb
+[Server] Waiting for connections...
+\end{verbatim}
+\end{commandline}
+
+\newpage
+Running the program.c with syscall interception also outputs the syscall interception client log messages:
+\begin{commandline}
+\begin{verbatim}
+$  make run_program
+
+LD_PRELOAD=./build/intercept.so ./build/program
+
+=== Syscall Interception Test Program ===
+
+[open/openat] Testing open() and openat()
+[Client] Intercepted open("/tmp/p3_tb_test.txt", 577, 644)
+[Client] open() RPC result: fd=3, errno=0
+  open(): fd=3
+[Client] Intercepted close(3)
+[Client] close() RPC result: 0, errno=0
+[Client] Intercepted openat(-100, "/tmp/p3_tb_test.txt", 66, 644)
+[Client] openat() RPC result: fd=4, errno=0
+[Client] Intercepted write(4, 0x56266ed5108b, 22)
+[Client] write() RPC result: 22 bytes, errno=0
+[Client] Intercepted close(4)
+[Client] close() RPC result: 0, errno=0
+  openat(): success
+
+# ...
+
+[Client] Intercepted unlink("/tmp/p3_tb_test.txt")
+[Client] unlink() RPC result: 0, errno=0
+=== Test Result: ALL TESTS PASSED ===
+\end{verbatim}
+\end{commandline}
+
+And the server terminal now displays:
+\begin{commandline}
+\begin{verbatim}
+# ...
+
+[Server] Accepted connection
+[Server] Waiting for requests...
+[Server] OPEN: path=/tmp/p3_tb_test.txt, flags=577, mode=644
+[Server] FD mapping: client_fd=3 -> server_fd=3
+[Server] OPEN result: fd=3, errno=0
+[Server] CLOSE: client_fd=3
+[Server] Removing FD mapping: client_fd=3 -> server_fd=3
+[Server] CLOSE result: 0, errno=0
+
+# ...
+\end{verbatim}
+\end{commandline}
+
+\newpage
+When the server is not available, the client intercepts uses direct syscalls.
+\begin{commandline}
+\begin{verbatim}
+$ make run_program
+
+LD_PRELOAD=./build/intercept.so ./build/program
+
+=== Syscall Interception Test Program ===
+
+[open/openat] Testing open() and openat()
+[Client] Intercepted open("/tmp/p3_tb_test.txt", 577, 644)
+[Client] Failed to connect to UNIX socket
+[Client] No RPC connection, using direct syscall
+  open(): fd=3
+[Client] Intercepted close(3)
+[Client] Failed to connect to UNIX socket
+[Client] No RPC connection, using direct syscall
+
+# ...
+\end{verbatim}
+\end{commandline}
+
+\subsection{Running sqlite3}
+
+To run sqlite3, the manually compiled \textit{sqlite3} binary must be used, because it has been compiled to not use mmap().
+\\
+
+The syscalls are intercepted and forwarded to the server exactly like for the test program. Sqlite3 works "as intended", you can input queries in the CLI, while also seeing client outputs.
+
+\begin{commandline}
+\begin{verbatim}
+$ LD_PRELOAD=./build/intercept.so ./sqlite3 test.db
+
+[Client] Intercepted access("test.db", 0)
+[Client] access() RPC result: -1, errno=2
+[Client] Intercepted access("/home/catab/.config/sqlite3/sqliterc", 0)
+[Client] access() RPC result: -1, errno=2
+SQLite version 3.51.1 2025-11-28 17:28:25
+Enter ".help" for usage hints.
+[Client] Intercepted access("/home/catab/.local/state/sqlite_history", 0)
+[Client] access() RPC result: -1, errno=2
+sqlite> CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL);
+[Client] Intercepted access("test.db", 0)
+[Client] access() RPC result: -1, errno=2
+[Client] Intercepted getcwd(0x7ffee57a78e0, 4096)
+[Client] getcwd() RPC result: "/home/catab/hearc/IL3/P3_TB", errno=0
+[Client] Intercepted open("/home/catab/hearc/IL3/P3_TB/test.db", 655426, 644)
+
+# ...
+\end{verbatim}
+\end{commandline}
+
+\section{Known issues}
+
+There are two main issues with my implementation, one in the server and the other with sqlite3 interceptions.
+
+\subsection{Server socket}
+
+Since the server only accepts one client, it must be restarted each time you run the client.
+\\
+
+This is caused because the connection reinitialization logic is not implemented. Once a client connects and then disconnects, the server is still listening to that 'ghost' connection and a new client instance cannot connect to it.
+
+\subsection{Sqlite3 interception}
+
+Even if the logs show all the interceptions, with no apparent issues, sqlite cannot properly format the database file when its syscalls are forwarded to the server. 
+\\
+
+Queries seem to run fine, but when trying to fetch data, for example, sqlite throws an error: \textit{\detokenize{Runtime error: database disk image is malformed (11)}}.
+\\
+
+I suspect this error is caused by an incorrect lseek syscall implementation on the server side. After some debugging, I still haven't been able to fix the issue.
+
+\chapter{Results and benchmarks}
+
+This section presents the results produced by the implemented programs. Let's have a look at what was accomplished in this project, as well as the performance impact of the syscall interception logic.
+
+\section{What was accomplished}
+
+In this project I have successfully implemented a proof-of-concept of syscall interception server, as well as the client.
+\\
+
+The research phase(s) of this project were the most valuable part of this project, since most of the topics covered by this project were unfamiliar to me.
+\\
+
+I have learned a lot about the low-level Linux syscall API, RPC and C program debugging.
+
+\section{Benchmarks}
+
+Since system calls are a core functionality, it's very important to consider the performance impact of syscall delegation. I have performed some benchmarks to measure this impact.
+
+\subsection{Methodology}
+
+In order to get more accurate results I had to make sure that the measurements reflect only the impact of syscall delegation, with as little external influence as possible.
+
+\subsubsection{Minimizing external influences}
+I have closed all other programs on my computer, to avoid CPU usage fluctuations that may be caused by some other program starting to work on something.
+
+\subsubsection{Minimizing print statements}
+Since print statements are very expensive, I have overridden all printf() variants as well as any underlying non-syscall methods printf() might use.
+\\
+
+This is accomplished by compiling and preloading another shared library. Its source code resides in \textit{\detokenize{src/disable_print.c}} and its shared library is \textit{\detokenize{build/no_print.so}}.
+\\
+
+I decided to keep a few print statements in order to be able to see socket connection status and final test results. Those print statements are made by direct syscalls (cannot be intercepted), in combination with custom string concatenation methods.
+
+\subsubsection{Measurements}
+I have used the \textit{time} command to time process execution. 
+\\
+
+In order to stress test my programs, I have run all the test functions in the program.c test program multiple times in a loop. Each iteration executes all the test functions once.
+
+\subsection{Performance impact}
+
+My implementation of the syscall delegation system is very performance taxing. Let's have a look at the numbers.
+
+\pgfplotstableread[col sep=comma]{benchmarks/benchmarks.csv}\datatable
+
+\begin{table}[h!]
+\centering
+\pgfplotstabletypeset[
+    columns/ITERATIONS/.style={string type},
+    columns/NO INTERCEPT/.style={string type},
+    columns/WITH INTERCEPT/.style={string type},
+    columns/DELTA/.style={string type},
+    columns/PERFORMANCE LOSS/.style={string type},
+    every head row/.style={before row=\toprule,after row=\midrule},
+    every last row/.style={after row=\bottomrule},
+]{\datatable}
+\caption{Performance comparison with and without intercept.}
+\label{tab:performance_loss}
+\end{table}
+
+\subsection{Possible improvements}
+
+This is a very simple benchmark, it doesn't allow us to determine the cause of the 5x performance loss.
+\\
+
+To fix the performance loss we would have to run the client and server through a profiler, in order to find out what specific operations slow down our programs.
+
+\chapter{Conclusion}
+
+In conclusion, this project successfully demonstrated a proof-of-concept for a Linux syscall interception server and client. Through the development of this system, significant insights were gained into low-level Linux syscall APIs and RPC communication using SunRPC + XDR.
+\\
+
+While the implementation intercepted and delegated 18 common syscalls, enabling the execution of basic test programs and a modified version of sqlite3, it also revealed a lot of challenges. 
+Benchmarking indicated a substantial performance loss, with syscall delegation resulting in a performance loss of roughly 5.5x compared to direct execution. 
+Furthermore, unresolved technical issues remain, such as the server's inability to handle multiple sequential client connections without a restart and a persistent data corruption error in sqlite3 likely linked to the lseek implementation.
 
 

@@ -24,7 +24,7 @@ GENERATED_FILES := $(PROTOCOL_H) $(PROTOCOL_XDR) $(PROTOCOL_CLNT) $(PROTOCOL_SVC
 
 .PHONY: all clean create_folders rpc_gen server client program run_server run_program
 
-all: create_folders rpc_gen server client program
+all: create_folders no_print rpc_gen server client program
 all_temp: create_folders rpc_gen server client program_temp
 
 create_folders:
@@ -64,6 +64,9 @@ program: create_folders
 	$(CC) -o $(BUILD_FOLDER)program $(SRC_FOLDER)program.c
 	chmod +x $(BUILD_FOLDER)program
 
+no_print: create_folders
+	$(CC) $(CFLAGS) -shared -fPIC $(SRC_FOLDER)disable_print.c -o $(BUILD_FOLDER)no_print.so
+
 program_temp: create_folders
 	$(CC) -o $(BUILD_FOLDER)program $(SRC_FOLDER)program_temp.c
 	chmod +x $(BUILD_FOLDER)program
@@ -80,3 +83,12 @@ run_program:
 
 run_sqlite:
 	LD_PRELOAD=$(BUILD_FOLDER)intercept.so ./sqlite-src-3510100/sqlite3 test.db
+
+run_server_no_print:
+	LD_PRELOAD=$(BUILD_FOLDER)no_print.so $(BUILD_FOLDER)syscall_server
+
+run_program_no_print:
+	LD_PRELOAD=$(BUILD_FOLDER)no_print.so:$(BUILD_FOLDER)intercept.so $(BUILD_FOLDER)program
+
+run_program_no_print_no_intercept:
+	LD_PRELOAD=$(BUILD_FOLDER)no_print.so $(BUILD_FOLDER)program

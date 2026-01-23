@@ -6,6 +6,7 @@
  */
 
 #define _GNU_SOURCE
+#include "transport_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,11 +21,85 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <linux/limits.h>
+#include <sys/syscall.h>
 #include "protocol/protocol.h"
-#include "transport_config.h"
+
+/* Helper functions for direct syscall output (bypasses LD_PRELOAD) */
+static void write_direct(const char *msg) {
+    syscall(SYS_write, STDERR_FILENO, msg, strlen(msg));
+}
+
+/* 
+    Manual string building to avoid snprintf 
+    (which might be intercepted when disabling print) 
+*/
+static void write_direct_int(const char *prefix, int value, const char *suffix) {
+    char buf[256];
+    char *p = buf;
+
+    /* Copy prefix */
+    while (*prefix && p < buf + sizeof(buf) - 1) {
+        *p++ = *prefix++;
+    }
+
+    /* Convert int to string */
+    if (value == 0) {
+        *p++ = '0';
+    } else {
+        char digits[20];
+        int i = 0;
+        int num = value;
+        int negative = 0;
+
+        if (num < 0) {
+            negative = 1;
+            num = -num;
+        }
+
+        while (num > 0 && i < 20) {
+            digits[i++] = '0' + (num % 10);
+            num /= 10;
+        }
+
+        if (negative) *p++ = '-';
+
+        while (i > 0 && p < buf + sizeof(buf) - 1) {
+            *p++ = digits[--i];
+        }
+    }
+
+    /* Copy suffix */
+    while (*suffix && p < buf + sizeof(buf) - 1) {
+        *p++ = *suffix++;
+    }
+
+    syscall(SYS_write, STDERR_FILENO, buf, p - buf);
+}
+
+static void write_direct_str(const char *prefix, const char *str, const char *suffix) {
+    char buf[512];
+    char *p = buf;
+
+    /* Copy prefix */
+    while (*prefix && p < buf + sizeof(buf) - 1) {
+        *p++ = *prefix++;
+    }
+
+    /* Copy string */
+    while (*str && p < buf + sizeof(buf) - 1) {
+        *p++ = *str++;
+    }
+
+    /* Copy suffix */
+    while (*suffix && p < buf + sizeof(buf) - 1) {
+        *p++ = *suffix++;
+    }
+
+    syscall(SYS_write, STDERR_FILENO, buf, p - buf);
+}
 
 /* Maximum number of file descriptors to track */
-#define MAX_FDS 1024
+#define MAX_FDS 10240000
 
 /* File descriptor mapping: client_fd -> server_fd */
 static int fd_mapping[MAX_FDS];
@@ -692,11 +767,14 @@ syscall_prog_1_freeresult(SVCXPRT *transp, xdrproc_t xdr_result, caddr_t result)
  * Main server function
  */
 int main(int argc, char *argv[]) {
+    write_direct("SYSCALL INTERCEPTION SERVER - CATALIN BOZAN\n");
+    write_direct("Haute Ecole Arc - All rights reserved\n\n");
+
     SVCXPRT *transp = NULL;
     transport_type_t transport;
     extern void syscall_prog_1(struct svc_req *, register SVCXPRT *);
 
-    fprintf(stderr, "[Server] Starting RPC server...\n");
+    write_direct("[Server] Starting RPC server...\n");
 
     /* Initialize FD mapping */
     init_fd_mapping();
@@ -740,8 +818,8 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-        fprintf(stderr, "[Server] RPC server ready at %s\n", UNIX_SOCKET_PATH);
-        fprintf(stderr, "[Server] Waiting for connections...\n");
+        write_direct_str("[Server] RPC server ready at ", UNIX_SOCKET_PATH, "\n");
+        write_direct("[Server] Waiting for connections...\n");
 
         /* Accept first connection */
         addr_len = sizeof(addr);
@@ -752,7 +830,7 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-        fprintf(stderr, "[Server] Accepted connection\n");
+        write_direct("[Server] Accepted connection\n");
 
         /* Create RPC transport for this connection */
         transp = svcfd_create(conn_sock, 0, 0);
@@ -787,10 +865,10 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-        fprintf(stderr, "[Server] RPC server ready on TCP port %d\n", transp->xp_port);
+        write_direct_int("[Server] RPC server ready on TCP port ", transp->xp_port, "\n");
     }
 
-    fprintf(stderr, "[Server] Waiting for requests...\n");
+    write_direct("[Server] Waiting for requests...\n");
 
     /* Enter service loop */
     svc_run();

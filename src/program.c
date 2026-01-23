@@ -19,6 +19,7 @@
 #include <sys/ioctl.h>       // For ioctl, FIONREAD, FIONBIO
 #include <termios.h>         // For TIOCGWINSZ, struct winsize
 #include <linux/limits.h>    // For PATH_MAX
+#include <sys/syscall.h>
 
 #define TEST_FILE "/tmp/p3_tb_test.txt"
 #define TEST_DATA "Hello from intercepted syscalls! This is a test message."
@@ -28,6 +29,10 @@
 /* -------------------------------------------------- */
 /* Utility helpers                                    */
 /* -------------------------------------------------- */
+/* Helper function for direct syscall output (bypasses LD_PRELOAD) */
+static void write_direct(const char *msg) {
+    syscall(SYS_write, STDERR_FILENO, msg, strlen(msg));
+}
 
 static int fail(const char *msg)
 {
@@ -645,31 +650,38 @@ static int test_ioctl(void)
 
 int main(void)
 {
+    write_direct("SYSCALL TEST PROGRAM - CATALIN BOZAN\n");
+    write_direct("Haute Ecole Arc - All rights reserved\n\n");
+
     int failed = 0;
+    const int TEST_ITERATIONS = 1;
 
     printf("\n=== Syscall Interception Test Program ===\n\n");
 
-    failed |= test_open_and_openat();
-    failed |= test_write_and_pwrite();
-    failed |= test_read_and_pread();
-    failed |= test_stat_family();
-    failed |= test_fcntl_operations();
-    failed |= test_fdatasync();
+    for(int i = 0; i < TEST_ITERATIONS; i++) {
+        failed |= test_open_and_openat();
+        failed |= test_write_and_pwrite();
+        failed |= test_read_and_pread();
+        failed |= test_stat_family();
+        failed |= test_fcntl_operations();
+        failed |= test_fdatasync();
+        failed |= test_lseek();
+        failed |= test_access();
+        failed |= test_unlink();
+        failed |= test_getcwd();
+        failed |= test_prlimit();
+        failed |= test_ioctl();
+        failed |= test_error_cases();
+        unlink(TEST_FILE);
+    }
 
-    /* New syscall tests */
-    failed |= test_lseek();
-    failed |= test_access();
-    failed |= test_unlink();
-    failed |= test_getcwd();
-    failed |= test_prlimit();
-    failed |= test_ioctl();
 
-    failed |= test_error_cases();
-
-    unlink(TEST_FILE);
-
-    printf("=== Test Result: %s ===\n\n",
-           failed ? "SOME TESTS FAILED" : "ALL TESTS PASSED");
+    write_direct("=== Test Result: ===\n");
+    if (failed) {
+        write_direct("SOME TESTS FAILED\n");
+    } else {
+        write_direct("ALL TESTS PASSED\n");
+    }
 
     return failed ? 1 : 0;
 }
